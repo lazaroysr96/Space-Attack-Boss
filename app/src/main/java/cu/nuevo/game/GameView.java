@@ -829,9 +829,8 @@ public class GameView extends View
 	}
 	
 	
-	
-	// Enemigos básicos del juego - Naves alienígenas
-	private class Block extends UnidadBase{
+	// Esto es una copia de seguridad para unenemigo basico futuro
+	private class Alien1 extends UnidadBase{
 		int life = 5;
 		public float x,y;
 		private Paint paint, paint2, paint3, paint4, paint5;
@@ -843,7 +842,7 @@ public class GameView extends View
 		float tentacleWave = 0;
 		
 		float var_5,var_10,var_15,var_20,var_1,var_2,var_3,var_8,var_12;
-		Block(float x,float y){
+		Alien1(float x,float y){
 			this.x=x;
 			this.y=y;
 			w=basesize*25;
@@ -1003,6 +1002,77 @@ public class GameView extends View
 				float pulse = var_1 + (float)Math.sin(animationTime * 8 + i) * var_1;
 				canvas.drawCircle(indicatorX, indicatorY, pulse, paint3);
 				canvas.drawCircle(indicatorX, indicatorY, var_1, paint5);
+			}
+		}
+	}
+
+	
+	// Enemigos básicos del juego - Versión optimizada
+	private class Block extends UnidadBase{
+		int life = 5;
+		public float x,y;
+		private Paint paint, paint2, paint3;
+		float speed=1;
+		float w,h;
+		float round;
+		float animationTime = 0;
+		
+		float var_5,var_10,var_15,var_20,var_1,var_2,var_3;
+		Block(float x,float y){
+			this.x=x;
+			this.y=y;
+			w=basesize*25;
+			h=basesize*25;
+			round=basesize*5;
+			
+			// Paint principal - cuerpo simplificado
+			paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+			paint.setStyle(Paint.Style.FILL);
+			paint.setColor(0xff4a148c);
+			
+			// Paint secundario - bordes
+			paint2 = new Paint(Paint.ANTI_ALIAS_FLAG);
+			paint2.setStyle(Paint.Style.STROKE);
+			paint2.setStrokeWidth(2);
+			paint2.setColor(0xff9c27b0);
+			
+			// Paint para núcleo
+			paint3 = new Paint(Paint.ANTI_ALIAS_FLAG);
+			paint3.setStyle(Paint.Style.FILL);
+			paint3.setColor(0xff00e676);
+			
+			var_1=basesize*1;
+			var_2=basesize*2;
+			var_3=basesize*3;
+			var_5=basesize*5;
+			var_10=basesize*10;
+			var_15=basesize*15;
+			var_20=basesize*20;
+		}
+
+		public void start(Canvas canvas){
+			animationTime += 0.05f;
+			
+			// Simplificar actualización de color
+			int[] colors = {0xff4a148c, 0xff6a1b9a, 0xff7b1fa2, 0xff8e24aa, 0xff9c27b0};
+			paint.setColor(life > 0 && life <= colors.length ? colors[life-1] : colors[0]);
+			
+			y=y+speed*basesize;
+			
+			// Cuerpo simple - ovalado
+			RectF body = new RectF(x+var_5, y+var_5, x+w-var_5, y+h-var_5);
+			canvas.drawOval(body, paint);
+			canvas.drawOval(body, paint2);
+			
+			// Núcleo simple
+			float corePulse = var_5 + (float)Math.sin(animationTime * 3) * var_2;
+			canvas.drawCircle(x + w/2, y + h/2, corePulse, paint3);
+			
+			// Indicadores simples
+			for(int i = 0; i < life; i++){
+				float indicatorX = x + var_5 + (i * var_3);
+				float indicatorY = y + h - var_3;
+				canvas.drawCircle(indicatorX, indicatorY, var_1, paint3);
 			}
 		}
 	}
