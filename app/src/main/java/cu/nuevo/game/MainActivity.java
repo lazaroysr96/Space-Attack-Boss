@@ -11,11 +11,42 @@ import android.view.animation.*;
 import android.content.*;
 import java.io.*;
 import android.view.SurfaceHolder.*;
+import android.media.*;
 
 public class MainActivity extends Activity 
 {
 	FrameLayout framelayout;
 	ImageView play;
+	MediaPlayer bgsound;
+	GameView gameview;
+	TextView history;
+	String[] historia = {
+    "Durante mucho tiempo se pensó que estábamos solos",
+    "La humanidad anhelaba el contacto con otras civilizaciones",
+    "Durante mucho tiempo, se enviaron mensajes por todo el universo",
+    "Finalmente alguien nos escuchó",
+    "Mas sus intenciones",
+    "No eran amistosas",
+    "Era demasiado tarde",
+    "Nuestro planeta ya estaba ubicado",
+    "Las naciones se unieron en una sola",
+    "Crearon la Liga de Defensa Planetaria",
+    "El futuro de la humanidad era incierto",
+    "Se construyó un muro para la defensa del planeta",
+    "Aunque este era capaz de interceptar los asteroides enviados por el enemigo",
+    "No era suficiente",
+    "No podía detener el ataque directo de los alienígenas",
+    "La Liga de Defensa Planetaria utilizó sus últimos recursos en el desarrollo del arma de defensa definitiva",
+    "Una nave con capacidad ofensiva para enfrentar cualquier enemigo",
+    "El enemigo lanzó su última oleada",
+    "El todo por el todo",
+    "Eres el último piloto",
+    "Tienes la misión de resistir tanto como sea posible",
+    "No permitas que el enemigo alcance el planeta",
+    "¡¡¡Listo para la batalla!!!"
+};
+
+	
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
@@ -23,32 +54,181 @@ public class MainActivity extends Activity
         setContentView(R.layout.main);
 		framelayout = findViewById(R.id.mainFrameLayout);
 		play= findViewById(R.id.mainImageView);
-		framelayout.addView(new GameView(this));
-		getActionBar().hide();
+		history=findViewById(R.id.mainTextView1);
+		if(getActionBar()!=null){
+			getActionBar().hide();
+		}
+		
+		// startGame();
 		
 		play.setOnClickListener(new View.OnClickListener(){
 				@Override
 				public void onClick(View p1)
 				{
-					framelayout.removeAllViews();
-					framelayout.addView(new GameView(MainActivity.this));
-					
-					ObjectAnimator anim = new ObjectAnimator();
-					anim.setTarget(p1);
-					anim.setPropertyName("alpha");
-					anim.setFloatValues(0.25f,1);
-					anim.setDuration(500);
-					anim.setInterpolator(new DecelerateInterpolator());
-					anim.start();
+					startGame();
 				}
 			});
 			
+			history.setTypeface(Typeface.createFromAsset(getAssets(),"pixel_font.ttf"));
+		history.setOnClickListener(new View.OnClickListener(){
+
+				@Override
+				public void onClick(View p1)
+				{
+					if(index==0){
+						startGame();
+					}else{
+						mostrarHistoria();
+					}
+					
+				}
+			});
+			
+			
+			
+			mostrarHistoria();
+			
+		getWindow().setFlags(1024, 1024);
+		bgsound=MediaPlayer.create(MainActivity.this,R.raw.bg_history);
+		bgsound.start();
     }
+	
+	private void startGame(){
+		framelayout.removeAllViews();
+		gameview= new GameView(this);
+		gameview.setOnGameOverListener(new GameView.OnGameOverListener(){
+
+				@Override
+				public void onGameOver()
+				{
+					bgsound.stop();
+					bgsound=MediaPlayer.create(MainActivity.this,R.raw.gameover);
+					bgsound.setLooping(true);
+					bgsound.start();
+				}
+			});
+		framelayout.addView(gameview);
+
+		ObjectAnimator anim = new ObjectAnimator();
+		anim.setTarget(framelayout);
+		anim.setPropertyName("alpha");
+		anim.setFloatValues(0.25f,1);
+		anim.setDuration(1500);
+		anim.setInterpolator(new DecelerateInterpolator());
+		anim.start();
+		
+		if(bgsound!=null){
+			bgsound.stop();
+			bgsound=null;
+		}
+		bgsound = MediaPlayer.create(this,R.raw.bg1);
+		bgsound.setVolume(0.5f,0.5f);
+		bgsound.setOnCompletionListener(new MediaPlayer.OnCompletionListener(){
+
+				@Override
+				public void onCompletion(MediaPlayer p1)
+				{
+					bgsound = MediaPlayer.create(MainActivity.this,R.raw.bg2);
+					bgsound.start();
+				}
+			});
+		bgsound.start();
+		
+		
+	}
+	
+	int index=0;
+	public void mostrarHistoria(){
+		animateTerminalText(history,historia[index]);
+		index = ++index!=historia.length? index:0;
+		
+		
+		
+	}
 	
 	
 	public void toast(String str){
 		Toast.makeText(this,str,Toast.LENGTH_LONG).show();
 	}
+
+	@Override
+	protected void onResume()
+	{
+		if(bgsound!=null){
+			bgsound.start();
+		}
+		
+		super.onResume();
+	}
+
+	@Override
+	protected void onPause()
+	{
+		if(bgsound!=null){
+			bgsound.pause();
+		}
+		
+		super.onPause();
+	}
+	
+	
+	
+	
+	
+	private void animateTerminalText(final TextView textView, final String fullText) {
+        final Handler textHandler = new Handler();
+        final int[] charIndex = {0};
+
+        Runnable typeWriter = new Runnable() {
+            @Override
+            public void run() {
+                if (charIndex[0] < fullText.length()) {
+                    String currentText = fullText.substring(0, charIndex[0] + 1);
+                    textView.setText(currentText);
+                    charIndex[0]++;
+
+                    // Velocidad de escritura variable para efecto más realista
+                    int delay = 100 ; // 50-80ms por caracter
+                    textHandler.postDelayed(this, delay);
+                } else {
+                    // Efecto de parpadeo del cursor al finalizar
+                    //animateCursor(textView, fullText);
+                }
+            }
+        };
+
+        textHandler.post(typeWriter);
+    }
+/*
+    private void animateCursor(final TextView textView, final String baseText) {
+        final Handler cursorHandler = new Handler();
+        final boolean[] showCursor = {true};
+
+        Runnable cursorBlink = new Runnable() {
+            @Override
+            public void run() {
+                if (currentToast != null && currentToast.getParent() != null) {
+                    String text = showCursor[0] ? baseText : baseText.substring(0, baseText.length() - 1);
+                    textView.setText(text);
+                    showCursor[0] = !showCursor[0];
+                    cursorHandler.postDelayed(this, 300); // Parpadeo cada 300ms
+                }
+            }
+        };
+
+        cursorHandler.post(cursorBlink);
+    }
+	
+	*/
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	
 	
 	

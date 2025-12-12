@@ -7,7 +7,25 @@
 	<FrameLayout
 		android:layout_width="match_parent"
 		android:layout_height="match_parent"
-		android:id="@+id/mainFrameLayout"/>
+		android:id="@+id/mainFrameLayout"
+		android:background="@drawable/background1">
+
+		<TextView
+			android:layout_width="match_parent"
+			android:layout_height="match_parent"
+			android:text="Text"
+			android:id="@+id/mainTextView1"
+			android:layout_gravity="center"
+			android:textColor="#FF0F00"
+			android:textSize="40sp"
+			android:gravity="center"
+			android:padding="40dp"
+			android:shadowColor="#FAE800"
+			android:shadowDx="1.0"
+			android:shadowDy="1.0"
+			android:shadowRadius="1.0"/>
+
+	</FrameLayout>
 
 	<ImageView
 		android:layout_width="wrap_content"

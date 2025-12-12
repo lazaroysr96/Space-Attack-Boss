@@ -11,7 +11,8 @@ import android.os.*;
 public class GameView extends View
 {
 	
-	
+	public interface OnGameOverListener {void onGameOver()}
+	private OnGameOverListener ongameover;
 	public static float basesize = 1;
 	int speedAtak = 0;
 	int puntos = 0;
@@ -41,6 +42,8 @@ public class GameView extends View
 	ArrayList<ItemNuclear>list_nuclear=new ArrayList<>();
 	int multiatak = 0;
 	boolean isGameOver = false;
+	boolean isGameDone = false;
+	boolean isGameVictory = false;
 	SharedPreferences gameData;
 	private int level=1;
 	int record = 0;
@@ -75,6 +78,8 @@ public class GameView extends View
 		
 		record=gameData.getInt("record",0);
 		createSoundPool();
+		
+		
 	}
 
 	@Override
@@ -107,12 +112,27 @@ public class GameView extends View
 		
 		// Solo mostrar puntos y record si el juego no ha terminado
 		if(muro.life>0){
-			canvas.drawText("PUNTOS: "+puntos,25,25,paintText);
-			canvas.drawText("RECORD: "+record,25,50,paintText);
-		}
-		
-		if(muro.life>0){
-		
+			canvas.drawText("PUNTOS: "+puntos,getDip(25),getDip(25),paintText);
+			canvas.drawText("RECORD: "+record,getDip(25),getDip(50),paintText);
+			canvas.drawText("PLANET: "+muro.life,getDip(25),getDip(75),paintText);
+			if(puntos>50){
+				isGameDone=true;
+				if(blocks.size()<=0&&list_boss.size()<=0){
+					isGameVictory=true;
+				}
+			}
+			
+			if(isGameVictory){
+				Texto gameover = new Texto(getWidth()/2,getHeight()/2);
+				gameover.setText("VICTORIA");
+				gameover.setTextSize(getDip(40));
+				gameover.setTextColor(Color.GREEN);
+				gameover.setStrokeColor(Color.WHITE);
+				gameover.setStrokeWidth(getDip(0.5f));
+				gameover.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"pixel_font.ttf"));
+				gameover.draw(canvas);
+			}
+			
 		}else{
 			
 			
@@ -120,6 +140,15 @@ public class GameView extends View
 			gameover.setText("GAME OVER");
 			gameover.setTextSize(getDip(40));
 			gameover.setTextColor(Color.RED);
+			gameover.setStrokeColor(Color.WHITE);
+			gameover.setStrokeWidth(getDip(0.5f));
+			gameover.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"pixel_font.ttf"));
+			gameover.draw(canvas);
+			
+			gameover = new Texto(getWidth()/2,(getHeight()/2)-getDip(55));
+			gameover.setText("PLANETA ALIEGENIZADO!!!");
+			gameover.setTextSize(getDip(25));
+			gameover.setTextColor(Color.BLACK);
 			gameover.setStrokeColor(Color.WHITE);
 			gameover.setStrokeWidth(getDip(0.5f));
 			gameover.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"pixel_font.ttf"));
@@ -139,9 +168,16 @@ public class GameView extends View
 				tt.draw(canvas);
 			}
 			
+			if(ongameover!=null){
+				ongameover.onGameOver();
+			}
+			
 		}
 		if(!isGameOver||explocionList.size()>0){
-		invalidate();
+			if(!isGameVictory||explocionList.size()>0){
+				invalidate();
+			}
+		
 		}
 	}
 
@@ -178,6 +214,7 @@ public class GameView extends View
 	
 	void disparar(){
 		if(nave.isEliminada()){return;}
+		
 			if(++speedAtak>=nave.speedAtak){
 					if(multiatak>0){
 					Fire fire1=nave.fire();
@@ -218,6 +255,8 @@ public class GameView extends View
 	int interval_ene;
 	public void generate(){
 		if(isGameOver){return;}
+		
+		if(!isGameDone){
 		++ interval_block;
 		if(++interval_fire==50){
 			interval_fire=0;
@@ -245,12 +284,15 @@ public class GameView extends View
 		
 		// Jefe cada 50 puntos
 		if(puntos >= 50 && (puntos - lastBossScore) >= 50){
-			Boss jefe = new Boss(getWidth()/2, -50);
+			Boss jefe = new Boss(getRandom(50, getWidth()), -50);
 			jefe.life = 10; // Jefe más resistente
 			list_boss.add(jefe);
 			lastBossScore = puntos;
 			textfades.add(new TextFade("¡JEFE!", (float)getWidth()/2, (float)getHeight()/2, 0xffff0000));
 		}
+		}
+		if(isGameDone&&(list_boss.size()<=0)&&(blocks.size()<=0)){return;}
+		
 		disparar();
 
 	}
@@ -279,11 +321,10 @@ public class GameView extends View
 				startSoundPool(2);
 			}
 			// Jefe dispara (life=10)
-			if(ene.life == 10 && Math.random() < 0.02){
-				Fire fire = new Fire(ene.x + n.n12, ene.y + n.n12);
-				fire.dy = 2;
-				fire.setColor(0xffff0000);
-				fires.add(fire);
+			if(ene.life < 3 && Math.random() < 0.015){
+				//Fire fire = new Fire(ene.x + n.n12, ene.y + n.n12);
+				Asteroide asteroide = new Asteroide(ene.x +n.n12, ene.y+n.n12 );
+				asteroides.add(asteroide);
 			}
 		}
 
@@ -294,18 +335,20 @@ public class GameView extends View
 				startSoundPool(2);
 			}
 			// Jefe dispara
-			if(jefe.life == 10 && Math.random() < 0.02){
-				Fire fire = new Fire(jefe.x + n.n12, jefe.y + n.n12);
-				fire.dy = 2;
-				fire.setColor(0xffff0000);
-				fires.add(fire);
+			if(jefe.life < 5 && Math.random() < 0.02){
+				Asteroide asteroide = new Asteroide(jefe.x , jefe.y );
+				asteroides.add(asteroide);
+				//Fire fire = new Fire(jefe.x + n.n12, jefe.y + n.n12);
+				//fire.dy = 2;
+				//fire.setColor(0xffff00ff);
+				//fires.add(fire);
 			}
 		}
 		
 		for(ItemTriple it :itemtriple){
 			it.draw(canvas);
 			
-			if(isClick(nave.x,nave.y,it.x,it.y,20)){
+			if(isClick(nave.x,nave.y,it.x,it.y,20*basesize)){
 				it.eliminar();
 				textfades.add(new TextFade("Triple fuego",(float)getWidth()/2,(float)getHeight()/2,0xff00ff00));
 				setMultifire();
@@ -320,7 +363,7 @@ public class GameView extends View
 		
 		for(ItemSpeed is :itemSpeed){
 			is.draw(canvas);
-			if(isClick(nave.x,nave.y,is.x,is.y,20)){
+			if(isClick(nave.x,nave.y,is.x,is.y,20*basesize)){
 				//startSound(R.raw.sound2);
 				startSoundPool(2);
 				is.eliminar();
@@ -474,7 +517,7 @@ public class GameView extends View
 		
 		for(PlusLifeNave pl :list_pluslife){
 			pl.move(canvas);
-			if(isClick(nave.x,nave.y,pl.x,pl.y,20)){
+			if(isClick(nave.x,nave.y,pl.x,pl.y,20*basesize)){
 				pl.consumir();
 				nave.life(1);
 				textfades.add(new TextFade("LIFE "+nave.life,pl.x,pl.y,0xff00ff00));
@@ -483,7 +526,7 @@ public class GameView extends View
 		
 		for(PlusLifeMuro plm :list_pluslife_muro){
 			plm.move(canvas);
-			if(isClick(nave.x,nave.y,plm.x,plm.y,20)){
+			if(isClick(nave.x,nave.y,plm.x,plm.y,20*basesize)){
 				plm.consumir();
 				++muro.life;
 				textfades.add(new TextFade("LIFE "+muro.life,plm.x,plm.y,0xff0000ff));
@@ -518,7 +561,7 @@ public class GameView extends View
 			
 			for(Fire fire:fires){
 				if(!a.isEliminada()){
-				if(isClick(fire.x,fire.y,a.x,a.y,a.radio)){
+				if(isClick(fire.x,fire.y,a.x,a.y,a.radio*basesize)){
 					fire.eliminar();
 					a.eliminar();
 					startSoundPool(7);
@@ -678,12 +721,14 @@ public class GameView extends View
 		public float x,y;
 		private Paint paint;
 		int life = 1;
-		float speed = 3;
+		float speed = 3.5f;
 		float dx = 0;
 		float dy = -1;
 		Fire(float x,float y){
 			this.x=x;
 			this.y=y;
+			speed=speed*basesize;
+			// toast(""+speed);
 			paint=new Paint(Paint.ANTI_ALIAS_FLAG);
 			paint.setColor(Color.RED);
 		}
@@ -720,7 +765,7 @@ public class GameView extends View
 	
 	
 	
-	
+	// Enemigos básicos del juego
 	private class Block extends UnidadBase{
 		int life = 5;
 		public float x,y;
@@ -750,7 +795,7 @@ public class GameView extends View
 		public void start(Canvas canvas){
 			
 			paint.setColor(getColorLevel(life>0?life-1:0));
-			y=y+speed;
+			y=y+speed*basesize;
 			RectF rectf = new RectF(x,y,x+w,y+h);
 			RectF rectf1 = new RectF(x+var_5,y+var_5,x+var_10,y+var_10);
 			RectF rectf2 = new RectF(x+w-var_10,y+var_5,x+w-var_5,y+var_10);
@@ -849,7 +894,8 @@ public class GameView extends View
 			shipBody.close();
 			
 			// Aplicar color según nivel de vida
-			paint.setColor(getColorLevel(life-1));
+			//paint.setColor(getColorLevel(life-1));
+			paint.setColor(0xffff0000);
 			canvas.drawPath(shipBody, paint);
 			canvas.drawPath(shipBody, paint2);
 			
@@ -1211,7 +1257,7 @@ public class GameView extends View
 		float x,y;
 		Bitmap bitmap;
 		Paint paint;
-		float speed=3;
+		float speed=4;
 		float radio;
 		int w,h;
 		Asteroide (float x,float y){
@@ -1223,6 +1269,7 @@ public class GameView extends View
 			w = bitmap.getWidth();
 			h = bitmap.getHeight();
 			radio = Math.max(w,h)/2;
+			speed=speed*basesize;
 			
 		}
 		
@@ -1864,6 +1911,13 @@ public class GameView extends View
 		float get(float num){
 			if(base == 0) return 0;
 			return num*base;
+		}
+	}
+	
+	
+	public void setOnGameOverListener(OnGameOverListener ongameover){
+		if(ongameover!=null){
+			this.ongameover=ongameover;
 		}
 	}
 }
