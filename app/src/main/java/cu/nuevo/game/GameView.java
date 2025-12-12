@@ -11,7 +11,7 @@ import android.os.*;
 public class GameView extends View
 {
 	
-	public interface OnGameOverListener {void onGameOver()}
+	public interface OnGameOverListener {void onGameOver();}
 	private OnGameOverListener ongameover;
 	public static float basesize = 1;
 	int speedAtak = 0;
@@ -719,25 +719,38 @@ public class GameView extends View
 	
 	private class Fire extends UnidadBase{
 		public float x,y;
-		private Paint paint;
+		private Paint paint, paint2, paint3;
 		int life = 1;
 		float speed = 3.5f;
 		float dx = 0;
 		float dy = -1;
+		float animationTime = 0;
+		float trailLength = 0;
+		
 		Fire(float x,float y){
 			this.x=x;
 			this.y=y;
 			speed=speed*basesize;
-			// toast(""+speed);
-			paint=new Paint(Paint.ANTI_ALIAS_FLAG);
-			paint.setColor(Color.RED);
+			
+			// Paint principal - núcleo del proyectil
+			paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+			paint.setStyle(Paint.Style.FILL);
+			paint.setColor(0xff00ffff); // Cyan brillante
+			paint.setShadowLayer(6*basesize, 0, 0, 0xff0088ff);
+			
+			// Paint secundario - aura energética
+			paint2 = new Paint(Paint.ANTI_ALIAS_FLAG);
+			paint2.setStyle(Paint.Style.STROKE);
+			paint2.setStrokeWidth(n != null ? n.get(2) : 2);
+			paint2.setColor(0xffffff00); // Amarillo energético
+			paint2.setAlpha(180);
+			
+			// Paint para estela - efecto de trail
+			paint3 = new Paint(Paint.ANTI_ALIAS_FLAG);
+			paint3.setStyle(Paint.Style.FILL);
+			paint3.setColor(0xff0080ff); // Azul eléctrico
 		}
-		/*
-		public void start(Canvas canvas){
-			y=y-3;
-			canvas.drawCircle(x,y,5,paint);
-		}
-		*/
+		
 		void draw(Canvas canvas){
 			float mx,my;
 			if(dx==0){
@@ -751,15 +764,67 @@ public class GameView extends View
 			}else{
 				my=dy*speed;
 			}
+			
+			// Actualizar posición
 			x=x+mx;
 			y=y+my;
-			canvas.drawCircle(x,y,(basesize*5),paint);
+			animationTime += 0.1f;
+			trailLength = Math.min(trailLength + 0.5f, n.n20);
 			
+			// Dibujar estela energética
+			for(int i = 0; i < 5; i++){
+				float trailProgress = i / 5f;
+				float trailX = x - mx * trailProgress * 3;
+				float trailY = y - my * trailProgress * 3;
+				float trailSize = (basesize * 3) * (1 - trailProgress);
+				int alpha = 100 - (int)(trailProgress * 80);
+				
+				paint3.setAlpha(alpha);
+				canvas.drawCircle(trailX, trailY, trailSize, paint3);
+			}
+			paint3.setAlpha(255);
+			
+			// Dibujar anillos expansivos
+			for(int i = 0; i < 2; i++){
+				float ringProgress = (animationTime + i * 0.3f) % 1f;
+				float ringSize = (basesize * 2) + ringProgress * n.n10;
+				int ringAlpha = (int)((1 - ringProgress) * 150);
+				
+				paint2.setAlpha(ringAlpha);
+				canvas.drawCircle(x, y, ringSize, paint2);
+			}
+			paint2.setAlpha(180);
+			
+			// Dibujar núcleo principal con pulsación
+			float corePulse = (basesize * 4) + (float)Math.sin(animationTime * 4) * basesize;
+			canvas.drawCircle(x, y, corePulse, paint);
+			
+			// Dibujar centro brillante
+			canvas.drawCircle(x, y, basesize * 2, paint2);
+			
+			// Dibujar partículas de energía
+			for(int i = 0; i < 4; i++){
+				float angle = animationTime * 3 + (i * (float)Math.PI / 2);
+				float particleX = x + (float)Math.cos(angle) * basesize * 2;
+				float particleY = y + (float)Math.sin(angle) * basesize * 2;
+				canvas.drawCircle(particleX, particleY, basesize, paint);
+			}
 		}
-		
 		
 		void setColor(int color){
 			paint.setColor(color);
+			// Ajustar colores secundarios según el color principal
+			if(color == Color.RED){
+				paint2.setColor(0xffff6600); // Naranja
+				paint3.setColor(0xffcc0000); // Rojo oscuro
+			} else if(color == 0xffff0000){ // Rojo brillante (enemigos)
+				paint2.setColor(0xffffaa00); // Amarillo anaranjado
+				paint3.setColor(0xff880000); // Rojo oscuro
+			} else {
+				// Colores por defecto para jugador
+				paint2.setColor(0xffffff00); // Amarillo
+				paint3.setColor(0xff0080ff); // Azul
+			}
 		}
 	}
 	
@@ -769,42 +834,126 @@ public class GameView extends View
 	private class Block extends UnidadBase{
 		int life = 5;
 		public float x,y;
-		private Paint paint;
-		Paint paint2;
+		private Paint paint, paint2, paint3, paint4;
 		float speed=1;
 		float w,h;
 		float round;
+		float animationTime = 0;
+		float rotationAngle = 0;
 		
-		float var_5,var_10;
+		float var_5,var_10,var_15,var_20,var_1,var_2,var_3;
 		Block(float x,float y){
 			this.x=x;
 			this.y=y;
 			w=basesize*25;
 			h=basesize*25;
 			round=basesize*5;
-			paint=new Paint(Paint.ANTI_ALIAS_FLAG);
-			paint.setColor(Color.RED);
 			
-			paint2=new Paint(Paint.ANTI_ALIAS_FLAG);
-			paint2.setColor(0x90202020);
+			// Paint principal - cuerpo del enemigo
+			paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+			paint.setStyle(Paint.Style.FILL);
+			paint.setColor(0xff8b0000); // Rojo oscuro
 			
+			// Paint secundario - bordes y detalles
+			paint2 = new Paint(Paint.ANTI_ALIAS_FLAG);
+			paint2.setStyle(Paint.Style.STROKE);
+			paint2.setStrokeWidth(n != null ? n.get(2) : 2);
+			paint2.setColor(0xffff3333); // Rojo brillante
+			paint2.setShadowLayer(4*basesize, 0, 0, 0xff880000);
+			
+			// Paint para núcleo energético
+			paint3 = new Paint(Paint.ANTI_ALIAS_FLAG);
+			paint3.setStyle(Paint.Style.FILL);
+			paint3.setColor(0xffff6600); // Naranja energético
+			paint3.setShadowLayer(6*basesize, 0, 0, 0xffff0000);
+			
+			// Paint para deflectores
+			paint4 = new Paint(Paint.ANTI_ALIAS_FLAG);
+			paint4.setStyle(Paint.Style.STROKE);
+			paint4.setStrokeWidth(n != null ? n.get(1) : 1);
+			paint4.setColor(0xff00ff00); // Verde de defensa
+			
+			var_1=basesize*1;
+			var_2=basesize*2;
+			var_3=basesize*3;
 			var_5=basesize*5;
 			var_10=basesize*10;
+			var_15=basesize*15;
+			var_20=basesize*20;
 		}
 
 		public void start(Canvas canvas){
+			animationTime += 0.05f;
+			rotationAngle += 0.02f;
 			
-			paint.setColor(getColorLevel(life>0?life-1:0));
+			// Actualizar color según vida
+			int[] colors = {0xff8b0000, 0xffa52a2a, 0xffcd5c5c, 0xffdc143c, 0xffff0000};
+			paint.setColor(life > 0 && life <= colors.length ? colors[life-1] : colors[0]);
+			
 			y=y+speed*basesize;
-			RectF rectf = new RectF(x,y,x+w,y+h);
-			RectF rectf1 = new RectF(x+var_5,y+var_5,x+var_10,y+var_10);
-			RectF rectf2 = new RectF(x+w-var_10,y+var_5,x+w-var_5,y+var_10);
-			RectF rectf3 = new RectF(x+var_5,y+h-var_10,x+w-var_5,y+h-var_5);
 			
+			// Dibujar cuerpo principal con bordes redondeados
+			RectF rectf = new RectF(x,y,x+w,y+h);
 			canvas.drawRoundRect(rectf,round,round,paint);
-			canvas.drawRect(rectf1,paint2);
-			canvas.drawRect(rectf2,paint2);
-			canvas.drawRect(rectf3,paint2);
+			canvas.drawRoundRect(rectf,round,round,paint2);
+			
+			// Dibujar núcleo central pulsante
+			float coreX = x + w/2;
+			float coreY = y + h/2;
+			float corePulse = var_5 + (float)Math.sin(animationTime * 3) * var_2;
+			canvas.drawCircle(coreX, coreY, corePulse, paint3);
+			canvas.drawCircle(coreX, coreY, var_3, paint2);
+			
+			// Dibujar deflectores giratorios en las esquinas
+			for(int i = 0; i < 4; i++){
+				float angle = rotationAngle + (i * (float)Math.PI / 2);
+				float deflectorX, deflectorY;
+				
+				switch(i){
+					case 0: // Superior izquierda
+						deflectorX = x + var_10;
+						deflectorY = y + var_10;
+						break;
+					case 1: // Superior derecha
+						deflectorX = x + w - var_10;
+						deflectorY = y + var_10;
+						break;
+					case 2: // Inferior izquierda
+						deflectorX = x + var_10;
+						deflectorY = y + h - var_10;
+						break;
+					default: // Inferior derecha
+						deflectorX = x + w - var_10;
+						deflectorY = y + h - var_10;
+						break;
+				}
+				
+				// Dibujar deflector con animación
+				float deflectorSize = var_3 + (float)Math.sin(animationTime * 4 + i) * var_1;
+				canvas.drawCircle(deflectorX, deflectorY, deflectorSize, paint4);
+				
+				// Conectar con el centro
+				canvas.drawLine(coreX, coreY, deflectorX, deflectorY, paint4);
+			}
+			
+			// Dibujar paneles de armadura
+			RectF[] armorPanels = {
+				new RectF(x+var_5, y+var_5, x+var_15, y+var_10), // Superior
+				new RectF(x+w-var_15, y+var_5, x+w-var_5, y+var_10), // Superior derecho
+				new RectF(x+var_5, y+h-var_10, x+var_15, y+h-var_5), // Inferior
+				new RectF(x+w-var_15, y+h-var_10, x+w-var_5, y+h-var_5) // Inferior derecho
+			};
+			
+			for(RectF panel : armorPanels){
+				canvas.drawRect(panel, paint2);
+			}
+			
+			// Dibujar indicadores de estado
+			for(int i = 0; i < life; i++){
+				float indicatorX = x + var_5 + (i * var_3);
+				float indicatorY = y + h - var_3;
+				canvas.drawCircle(indicatorX, indicatorY, var_1, paint3);
+			}
 		}
 	}
 	
@@ -978,66 +1127,116 @@ public class GameView extends View
 	
 	public class ItemTriple extends Item {
 		float x,y;
-		Paint paint1, paint2, paint3;
+		Paint paint1, paint2, paint3, paint4;
 		float giro = 0;
-		float v5,v8,v10,v15,v20,v25;
+		float animationTime = 0;
+		float v5,v8,v10,v12,v15,v18,v20,v25,v1,v2,v3,v4;
 		ItemTriple(float x,float y){
 			super(5000);
 			setTag("triple");
 			this.x=x;
 			this.y=y;
 			
-			// Paint principal - contorno brillante
+			// Paint principal - hexágono exterior
 			paint1 = new Paint(Paint.ANTI_ALIAS_FLAG);
 			paint1.setStyle(Paint.Style.STROKE);
-			paint1.setStrokeWidth(basesize*3);
-			paint1.setColor(0xff00ff00);
-			paint1.setShadowLayer(10*basesize, 0, 0, 0xff00ff00);
+			paint1.setStrokeWidth(n != null ? n.get(3) : 3);
+			paint1.setColor(0xff00ffff); // Cyan brillante
+			paint1.setShadowLayer(8*basesize, 0, 0, 0xff0088ff);
 			
-			// Paint secundario - círculos internos
+			// Paint secundario - núcleo energético
 			paint2 = new Paint(Paint.ANTI_ALIAS_FLAG);
 			paint2.setStyle(Paint.Style.FILL);
-			paint2.setColor(0xff80ff00);
+			paint2.setColor(0xff0080ff); // Azul eléctrico
 			
-			// Paint central - núcleo brillante
+			// Paint para proyectiles
 			paint3 = new Paint(Paint.ANTI_ALIAS_FLAG);
 			paint3.setStyle(Paint.Style.FILL);
-			paint3.setColor(0xffffff00);
-			paint3.setAlpha(180);
+			paint3.setColor(0xffff6600); // Naranja energético
+			paint3.setShadowLayer(5*basesize, 0, 0, 0xffff0000);
 			
+			// Paint para detalles
+			paint4 = new Paint(Paint.ANTI_ALIAS_FLAG);
+			paint4.setStyle(Paint.Style.STROKE);
+			paint4.setStrokeWidth(n != null ? n.get(1) : 1);
+			paint4.setColor(0xffffff00); // Amarillo brillante
+			
+			v1=basesize*1;
+			v2=basesize*2;
+			v3=basesize*3;
+			v4=basesize*4;
 			v5=basesize*5;
 			v8=basesize*8;
 			v10=basesize*10;
+			v12=basesize*12;
 			v15=basesize*15;
+			v18=basesize*18;
 			v20=basesize*20;
 			v25=basesize*25;
 		}
 
 		public void draw(Canvas canvas){
 			y=y+basesize*2;
-			giro += 0.05f;
+			giro += 0.03f;
+			animationTime += 0.05f;
 			
-			// Dibujar círculo central brillante
-			canvas.drawCircle(x,y,v20,paint3);
+			// Dibujar hexágono exterior rotante
+			canvas.save();
+			canvas.translate(x, y);
+			canvas.rotate(giro * 180 / (float)Math.PI);
 			
-			// Dibujar círculos orbitales con efecto de rotación
-			for(int i=0; i<6; i++){
-				float angle = giro + (i * (float)Math.PI / 3);
-				float orbitX = x + (float)Math.cos(angle) * v15;
-				float orbitY = y + (float)Math.sin(angle) * v15;
-				canvas.drawCircle(orbitX, orbitY, v8, paint2);
+			Path hexagon = new Path();
+			for(int i = 0; i < 6; i++){
+				float angle = i * (float)Math.PI / 3;
+				float px = (float)Math.cos(angle) * v20;
+				float py = (float)Math.sin(angle) * v20;
+				if(i == 0){
+					hexagon.moveTo(px, py);
+				} else {
+					hexagon.lineTo(px, py);
+				}
+			}
+			hexagon.close();
+			
+			canvas.drawPath(hexagon, paint1);
+			canvas.restore();
+			
+			// Dibujar núcleo central pulsante
+			float corePulse = v8 + (float)Math.sin(animationTime * 3) * v2;
+			canvas.drawCircle(x, y, corePulse, paint2);
+			canvas.drawCircle(x, y, v4, paint4);
+			
+			// Dibujar tres proyectiles en formación triangular
+			for(int i = 0; i < 3; i++){
+				float angle = -giro + (i * (float)Math.PI * 2 / 3);
+				float orbitRadius = v12;
+				float px = x + (float)Math.cos(angle) * orbitRadius;
+				float py = y + (float)Math.sin(angle) * orbitRadius;
+				
+				// Proyectil con efecto de energía
+				float projectileSize = v4 + (float)Math.sin(animationTime * 8 + i) * v1;
+				canvas.drawCircle(px, py, projectileSize, paint3);
+				canvas.drawCircle(px, py, v2, paint2);
+				
+				// Línea de energía hacia el centro
+				canvas.drawLine(x, y, px, py, paint4);
 			}
 			
-			// Dibujar contorno principal con efecto pulsante
-			float pulse = v20 + (float)Math.sin(giro * 2) * 2;
-			canvas.drawCircle(x,y,pulse,paint1);
+			// Dibujar anillos energéticos concéntricos
+			for(int i = 0; i < 3; i++){
+				float ringRadius = v15 + i * v3;
+				int alpha = 100 - i * 30;
+				paint1.setAlpha(alpha);
+				canvas.drawCircle(x, y, ringRadius, paint1);
+			}
+			paint1.setAlpha(255);
 			
-			// Dibujar líneas conectoras
-			for(int i=0; i<3; i++){
-				float angle = giro + (i * (float)Math.PI * 2 / 3);
-				float endX = x + (float)Math.cos(angle) * v25;
-				float endY = y + (float)Math.sin(angle) * v25;
-				canvas.drawLine(x, y, endX, endY, paint1);
+			// Dibujar partículas de energía
+			for(int i = 0; i < 8; i++){
+				float angle = animationTime * 2 + (i * (float)Math.PI / 4);
+				float px = x + (float)Math.cos(angle) * (v18 + (float)Math.sin(animationTime * 4 + i) * v3);
+				float py = y + (float)Math.sin(angle) * (v18 + (float)Math.sin(animationTime * 4 + i) * v3);
+				canvas.drawCircle(px, py, v1, paint3);
 			}
 		}
 	}

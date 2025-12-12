@@ -46,7 +46,6 @@ public class MainActivity extends Activity
     "¡¡¡Listo para la batalla!!!"
 };
 
-	
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
