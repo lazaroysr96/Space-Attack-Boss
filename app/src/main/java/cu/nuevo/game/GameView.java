@@ -830,18 +830,19 @@ public class GameView extends View
 	
 	
 	
-	// Enemigos básicos del juego
+	// Enemigos básicos del juego - Naves alienígenas
 	private class Block extends UnidadBase{
 		int life = 5;
 		public float x,y;
-		private Paint paint, paint2, paint3, paint4;
+		private Paint paint, paint2, paint3, paint4, paint5;
 		float speed=1;
 		float w,h;
 		float round;
 		float animationTime = 0;
 		float rotationAngle = 0;
+		float tentacleWave = 0;
 		
-		float var_5,var_10,var_15,var_20,var_1,var_2,var_3;
+		float var_5,var_10,var_15,var_20,var_1,var_2,var_3,var_8,var_12;
 		Block(float x,float y){
 			this.x=x;
 			this.y=y;
@@ -849,35 +850,44 @@ public class GameView extends View
 			h=basesize*25;
 			round=basesize*5;
 			
-			// Paint principal - cuerpo del enemigo
+			// Paint principal - cuerpo orgánico alienígena
 			paint = new Paint(Paint.ANTI_ALIAS_FLAG);
 			paint.setStyle(Paint.Style.FILL);
-			paint.setColor(0xff8b0000); // Rojo oscuro
+			paint.setColor(0xff4a148c); // Púrpura oscuro alienígena
 			
-			// Paint secundario - bordes y detalles
+			// Paint secundario - venas y detalles biológicos
 			paint2 = new Paint(Paint.ANTI_ALIAS_FLAG);
 			paint2.setStyle(Paint.Style.STROKE);
 			paint2.setStrokeWidth(n != null ? n.get(2) : 2);
-			paint2.setColor(0xffff3333); // Rojo brillante
-			paint2.setShadowLayer(4*basesize, 0, 0, 0xff880000);
+			paint2.setColor(0xff9c27b0); // Púrpura brillante
+			paint2.setShadowLayer(4*basesize, 0, 0, 0xff6a1b9a);
 			
-			// Paint para núcleo energético
+			// Paint para núcleo biológico
 			paint3 = new Paint(Paint.ANTI_ALIAS_FLAG);
 			paint3.setStyle(Paint.Style.FILL);
-			paint3.setColor(0xffff6600); // Naranja energético
-			paint3.setShadowLayer(6*basesize, 0, 0, 0xffff0000);
+			paint3.setColor(0xff00e676); // Verde bioluminiscente
+			paint3.setShadowLayer(8*basesize, 0, 0, 0xff00c853);
 			
-			// Paint para deflectores
+			// Paint para tentáculos
 			paint4 = new Paint(Paint.ANTI_ALIAS_FLAG);
 			paint4.setStyle(Paint.Style.STROKE);
-			paint4.setStrokeWidth(n != null ? n.get(1) : 1);
-			paint4.setColor(0xff00ff00); // Verde de defensa
+			paint4.setStrokeWidth(n != null ? n.get(3) : 3);
+			paint4.setColor(0xff7b1fa2); // Púrpura medio
+			paint4.setShadowLayer(3*basesize, 0, 0, 0xff4a148c);
+			
+			// Paint para ojos sensores
+			paint5 = new Paint(Paint.ANTI_ALIAS_FLAG);
+			paint5.setStyle(Paint.Style.FILL);
+			paint5.setColor(0xffff00ff); // Magenta brillante
+			paint5.setShadowLayer(5*basesize, 0, 0, 0xff000000);
 			
 			var_1=basesize*1;
 			var_2=basesize*2;
 			var_3=basesize*3;
 			var_5=basesize*5;
+			var_8=basesize*8;
 			var_10=basesize*10;
+			var_12=basesize*12;
 			var_15=basesize*15;
 			var_20=basesize*20;
 		}
@@ -885,74 +895,114 @@ public class GameView extends View
 		public void start(Canvas canvas){
 			animationTime += 0.05f;
 			rotationAngle += 0.02f;
+			tentacleWave += 0.03f;
 			
-			// Actualizar color según vida
-			int[] colors = {0xff8b0000, 0xffa52a2a, 0xffcd5c5c, 0xffdc143c, 0xffff0000};
+			// Actualizar color según vida - tonos biológicos
+			int[] colors = {
+				0xff4a148c, // Púrpura oscuro (vida 5)
+				0xff6a1b9a, // Púrpura medio (vida 4)
+				0xff7b1fa2, // Púrpura claro (vida 3)
+				0xff8e24aa, // Púrpura más claro (vida 2)
+				0xff9c27b0  // Púrpura brillante (vida 1)
+			};
 			paint.setColor(life > 0 && life <= colors.length ? colors[life-1] : colors[0]);
 			
 			y=y+speed*basesize;
 			
-			// Dibujar cuerpo principal con bordes redondeados
-			RectF rectf = new RectF(x,y,x+w,y+h);
-			canvas.drawRoundRect(rectf,round,round,paint);
-			canvas.drawRoundRect(rectf,round,round,paint2);
+			// Dibujar cuerpo principal alienígena (forma orgánica)
+			Path alienBody = new Path();
+			float centerX = x + w/2;
+			float centerY = y + h/2;
 			
-			// Dibujar núcleo central pulsante
-			float coreX = x + w/2;
-			float coreY = y + h/2;
-			float corePulse = var_5 + (float)Math.sin(animationTime * 3) * var_2;
-			canvas.drawCircle(coreX, coreY, corePulse, paint3);
-			canvas.drawCircle(coreX, coreY, var_3, paint2);
+			// Forma ovalada alienígena con ondulaciones
+			alienBody.moveTo(centerX - var_12, centerY - var_15);
+			alienBody.quadTo(centerX - var_20, centerY, centerX - var_12, centerY + var_15);
+			alienBody.quadTo(centerX, centerY + var_20, centerX + var_12, centerY + var_15);
+			alienBody.quadTo(centerX + var_20, centerY, centerX + var_12, centerY - var_15);
+			alienBody.quadTo(centerX, centerY - var_20, centerX - var_12, centerY - var_15);
+			alienBody.close();
 			
-			// Dibujar deflectores giratorios en las esquinas
-			for(int i = 0; i < 4; i++){
-				float angle = rotationAngle + (i * (float)Math.PI / 2);
-				float deflectorX, deflectorY;
+			canvas.drawPath(alienBody, paint);
+			canvas.drawPath(alienBody, paint2);
+			
+			// Dibujar tentáculos moviéndose
+			for(int i = 0; i < 6; i++){
+				float tentacleAngle = (i * (float)Math.PI / 3) + tentacleWave;
+				float tentacleLength = var_15 + (float)Math.sin(tentacleWave * 2 + i) * var_3;
 				
-				switch(i){
-					case 0: // Superior izquierda
-						deflectorX = x + var_10;
-						deflectorY = y + var_10;
-						break;
-					case 1: // Superior derecha
-						deflectorX = x + w - var_10;
-						deflectorY = y + var_10;
-						break;
-					case 2: // Inferior izquierda
-						deflectorX = x + var_10;
-						deflectorY = y + h - var_10;
-						break;
-					default: // Inferior derecha
-						deflectorX = x + w - var_10;
-						deflectorY = y + h - var_10;
-						break;
+				float startX = centerX + (float)Math.cos(tentacleAngle) * var_8;
+				float startY = centerY + (float)Math.sin(tentacleAngle) * var_8;
+				
+				float endX = centerX + (float)Math.cos(tentacleAngle) * tentacleLength;
+				float endY = centerY + (float)Math.sin(tentacleAngle) * tentacleLength;
+				
+				// Tentáculo curvo
+				Path tentacle = new Path();
+				tentacle.moveTo(startX, startY);
+				float controlX = centerX + (float)Math.cos(tentacleAngle + 0.3f) * (tentacleLength * 0.6f);
+				float controlY = centerY + (float)Math.sin(tentacleAngle + 0.3f) * (tentacleLength * 0.6f);
+				tentacle.quadTo(controlX, controlY, endX, endY);
+				
+				canvas.drawPath(tentacle, paint4);
+				
+				// Ventas en tentáculos
+				for(int j = 0; j < 3; j++){
+					float veinProgress = j / 3f;
+					float veinX = startX + (endX - startX) * veinProgress;
+					float veinY = startY + (endY - startY) * veinProgress;
+					canvas.drawCircle(veinX, veinY, var_1, paint3);
 				}
-				
-				// Dibujar deflector con animación
-				float deflectorSize = var_3 + (float)Math.sin(animationTime * 4 + i) * var_1;
-				canvas.drawCircle(deflectorX, deflectorY, deflectorSize, paint4);
-				
-				// Conectar con el centro
-				canvas.drawLine(coreX, coreY, deflectorX, deflectorY, paint4);
 			}
 			
-			// Dibujar paneles de armadura
-			RectF[] armorPanels = {
-				new RectF(x+var_5, y+var_5, x+var_15, y+var_10), // Superior
-				new RectF(x+w-var_15, y+var_5, x+w-var_5, y+var_10), // Superior derecho
-				new RectF(x+var_5, y+h-var_10, x+var_15, y+h-var_5), // Inferior
-				new RectF(x+w-var_15, y+h-var_10, x+w-var_5, y+h-var_5) // Inferior derecho
-			};
+			// Dibujar núcleo biológico pulsante
+			float corePulse = var_5 + (float)Math.sin(animationTime * 3) * var_2;
+			canvas.drawCircle(centerX, centerY, corePulse, paint3);
+			canvas.drawCircle(centerX, centerY, var_3, paint2);
 			
-			for(RectF panel : armorPanels){
-				canvas.drawRect(panel, paint2);
+			// Dibujar ojos sensores alienígenas
+			for(int i = 0; i < 3; i++){
+				float eyeAngle = rotationAngle + (i * (float)Math.PI * 2 / 3);
+				float eyeDistance = var_10;
+				float eyeX = centerX + (float)Math.cos(eyeAngle) * eyeDistance;
+				float eyeY = centerY + (float)Math.sin(eyeAngle) * eyeDistance;
+				
+				// Ojo con parpadeo
+				float eyeSize = var_3 + (float)Math.sin(animationTime * 6 + i) * var_1;
+				canvas.drawCircle(eyeX, eyeY, eyeSize, paint5);
+				canvas.drawCircle(eyeX, eyeY, var_1, paint3);
+				
+				// Conexión neuronal al centro
+				Path neuralPath = new Path();
+				neuralPath.moveTo(centerX, centerY);
+				neuralPath.quadTo(
+					centerX + (float)Math.cos(eyeAngle + 0.5f) * eyeDistance * 0.5f,
+					centerY + (float)Math.sin(eyeAngle + 0.5f) * eyeDistance * 0.5f,
+					eyeX, eyeY
+				);
+				canvas.drawPath(neuralPath, paint2);
 			}
 			
-			// Dibujar indicadores de estado
+			// Dibujar simetría biológica - patrones orgánicos
+			for(int i = 0; i < 8; i++){
+				float patternAngle = (i * (float)Math.PI / 4) + rotationAngle;
+				float patternRadius = var_12;
+				float px = centerX + (float)Math.cos(patternAngle) * patternRadius;
+				float py = centerY + (float)Math.sin(patternAngle) * patternRadius;
+				
+				// Puntos bioluminiscentes
+				float glowSize = var_1 + (float)Math.sin(animationTime * 4 + i) * var_1;
+				paint3.setAlpha(150 + (int)((float)Math.sin(animationTime * 3 + i) * 100));
+				canvas.drawCircle(px, py, glowSize, paint3);
+			}
+			paint3.setAlpha(255);
+			
+			// Indicadores de vida - glóbulos biológicos
 			for(int i = 0; i < life; i++){
 				float indicatorX = x + var_5 + (i * var_3);
 				float indicatorY = y + h - var_3;
-				canvas.drawCircle(indicatorX, indicatorY, var_1, paint3);
+				float pulse = var_1 + (float)Math.sin(animationTime * 8 + i) * var_1;
+				canvas.drawCircle(indicatorX, indicatorY, pulse, paint3);
+				canvas.drawCircle(indicatorX, indicatorY, var_1, paint5);
 			}
 		}
 	}
