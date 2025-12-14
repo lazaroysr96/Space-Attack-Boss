@@ -21,6 +21,12 @@ public class GameView extends View
 	private float x,y;
 	int textColor=0xffff0000;
 	Paint paintText;
+	
+	// Paints para barras de vida
+	Paint healthBarBackground;
+	Paint planetHealthBar;
+	Paint cannonHealthBar;
+	Paint healthBarBorder;
 	Nave nave = new Nave();
 	ArrayList<Fire> fires = new ArrayList<>();
 	ArrayList<Block> blocks = new ArrayList<>();
@@ -82,6 +88,21 @@ public class GameView extends View
 		paintText.setColor(textColor);
 		paintText.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"pixel_font.ttf"));
 
+		// Inicializar Paints para barras de vida
+		healthBarBackground = new Paint(Paint.ANTI_ALIAS_FLAG);
+		healthBarBackground.setColor(0x80000000); // Gris oscuro semitransparente
+		
+		planetHealthBar = new Paint(Paint.ANTI_ALIAS_FLAG);
+		planetHealthBar.setColor(0xff0080ff); // Azul para planeta
+		
+		cannonHealthBar = new Paint(Paint.ANTI_ALIAS_FLAG);
+		cannonHealthBar.setColor(0xff00ff00); // Verde para cañón
+		
+		healthBarBorder = new Paint(Paint.ANTI_ALIAS_FLAG);
+		healthBarBorder.setStyle(Paint.Style.STROKE);
+		healthBarBorder.setStrokeWidth(2);
+		healthBarBorder.setColor(0xffffffff); // Borde blanco
+
 		record=gameData.getInt("record",0);
 		createSoundPool();
 
@@ -103,7 +124,8 @@ public class GameView extends View
 	protected void onDraw(Canvas canvas){
 		super.onDraw(canvas);
 
-
+		// Dibujar barras de vida en la parte superior
+		drawHealthBars(canvas);
 
 		if(muro==null){
 			muro=new Muro();
@@ -117,10 +139,10 @@ public class GameView extends View
 		gameStart(canvas);
 
 		// Solo mostrar puntos y record si el juego no ha terminado
-		if(muro.life>0){
-			canvas.drawText("PUNTOS: "+puntos,getDip(25),getDip(25),paintText);
-			canvas.drawText("RECORD: "+record,getDip(25),getDip(50),paintText);
-			canvas.drawText("PLANET: "+muro.life,getDip(25),getDip(75),paintText);
+		if(muro != null && muro.life>0){
+			canvas.drawText(""+puntos,getDip(25),getDip(25),paintText);
+			//canvas.drawText("RECORD: "+record,getDip(25),getDip(50),paintText);
+			//canvas.drawText("PLANET: "+muro.life,getDip(25),getDip(75),paintText);
 			if(puntos>3000){
 				isGameDone=true;
 				if(blocks.size()<=0&&list_boss.size()<=0){
@@ -218,6 +240,91 @@ public class GameView extends View
 		}
 	}
 	private void event_up(){
+	}
+
+	private void drawHealthBars(Canvas canvas){
+		float screenWidth = getWidth();
+		float screenHeight = getHeight();
+		
+		// Verificar que muro no sea null antes de acceder a sus propiedades
+		if(muro == null){
+			return; // Si muro es null, no dibujar barras
+		}
+		
+		// Dimensiones más pequeñas y estilizadas
+		float barWidth = screenWidth * 0.3f; // 30% del ancho (más pequeño)
+		float barHeight = 12 * basesize; // Más delgado
+		float barY = 25 * basesize; // Posición desde arriba
+		float barSpacing = 15 * basesize; // Espacio entre barras
+		
+		// Posición de la barra del planeta (izquierda)
+		float planetBarX = screenWidth * 0.2f;
+		
+		// Posición de la barra del cañón (derecha)
+		float cannonBarX = screenWidth * 0.5f;
+		
+		// Dibujar barra de vida del Planeta (estilo paralelogramo con punta)
+		drawStylizedHealthBar(canvas, planetBarX, barY, barWidth, barHeight, 
+			muro.life, 5, 0xff0080ff, "PLANETA");
+		
+		// Dibujar barra de vida del Cañón (estilo paralelogramo con punta)
+		drawStylizedHealthBar(canvas, cannonBarX, barY, barWidth, barHeight, 
+			nave.life, 5, 0xff00ff00, "CAÑÓN");
+	}
+	
+	private void drawStylizedHealthBar(Canvas canvas, float x, float y, float width, float height, 
+			int currentLife, int maxLife, int color, String label){
+		
+		// Calcular ancho de vida
+		float lifeWidth = (currentLife / (float)maxLife) * width;
+		
+		// Dibujar fondo (paralelogramo)
+		Path backgroundPath = new Path();
+		backgroundPath.moveTo(x, y);
+		backgroundPath.lineTo(x + width - 8 * basesize, y); // Línea superior
+		backgroundPath.lineTo(x + width, y + height); // Punta derecha
+		backgroundPath.lineTo(x + 8 * basesize, y + height); // Línea inferior
+		backgroundPath.close();
+		
+		healthBarBackground.setColor(0x60000000); // Fondo semitransparente
+		canvas.drawPath(backgroundPath, healthBarBackground);
+		
+		// Dibujar barra de vida (paralelogramo con punta)
+		if(lifeWidth > 8 * basesize){
+			Path lifePath = new Path();
+			lifePath.moveTo(x, y);
+			lifePath.lineTo(x + lifeWidth - 8 * basesize, y); // Línea superior
+			lifePath.lineTo(x + lifeWidth, y + height); // Punta derecha
+			lifePath.lineTo(x + 8 * basesize, y + height); // Línea inferior
+			lifePath.close();
+			
+			Paint lifePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+			lifePaint.setColor(color);
+			canvas.drawPath(lifePath, lifePaint);
+		}
+		
+		// Dibujar borde
+		Paint borderPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+		borderPaint.setStyle(Paint.Style.STROKE);
+		borderPaint.setStrokeWidth(1);
+		borderPaint.setColor(0xffffffff);
+		canvas.drawPath(backgroundPath, borderPaint);
+		
+		// Dibujar etiqueta pequeña
+		Paint labelPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+		labelPaint.setTextSize(10 * basesize);
+		labelPaint.setColor(0xffffffff);
+		labelPaint.setTypeface(Typeface.DEFAULT_BOLD);
+		canvas.drawText(label, x, y - 3 * basesize, labelPaint);
+		
+		// Dibujar puntos de vida (círculos pequeños)
+		Paint dotPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+		dotPaint.setColor(color);
+		for(int i = 0; i < currentLife && i < maxLife; i++){
+			float dotX = x + (i * (width / maxLife)) + 4 * basesize;
+			float dotY = y + height / 2;
+			canvas.drawCircle(dotX, dotY, 2 * basesize, dotPaint);
+		}
 	}
 
 	private float getDip(float num){
@@ -568,13 +675,15 @@ public class GameView extends View
 			plm.move(canvas);
 			if(isClick(nave.x,nave.y,plm.x,plm.y,20*basesize)){
 				plm.consumir();
-				++muro.life;
-				textfades.add(new TextFade("LIFE "+muro.life,plm.x,plm.y,0xff0000ff));
+				if(muro != null){
+					++muro.life;
+					textfades.add(new TextFade("LIFE "+muro.life,plm.x,plm.y,0xff0000ff));
+				}
 			}
 		}
 
 		for(Block block:blocks){
-			if(block.y>getHeight()-muro.height){
+			if(muro != null && block.y>getHeight()-muro.height){
 
 				if(--muro.life>=0){
 
@@ -636,7 +745,7 @@ public class GameView extends View
 
 		for(ItemNuclear nuclear :list_nuclear){
 			nuclear.draw(canvas);
-			if(nuclear.y>getHeight() -muro.height){
+			if(muro != null && nuclear.y>getHeight() -muro.height){
 				nuclear.eliminar();
 				muro.life=0;
 				isGameOver=true;
@@ -1176,7 +1285,8 @@ public class GameView extends View
 	public class Nave extends UnidadBase{
 		float x = 0,y = 0;
 		int speedAtak = 25;
-		int life = 1;
+		int life = 5; // Vida máxima limitada a 5
+		final int MAX_LIFE = 5; // Constante para vida máxima
 		Paint paint, paint2, paint3, paint4, paint5;
 		Bitmap bitmap;
 		float animationTime = 0;
@@ -1334,6 +1444,10 @@ public class GameView extends View
 
 		public void life(int l){
 			life=life+l;
+			// Limitar vida al máximo y mínimo permitidos
+			if(life > MAX_LIFE) life = MAX_LIFE;
+			if(life < 0) life = 0;
+			
 			if(life>0){
 				paint.setColor(getColorLevel(life-1));
 			}
@@ -1632,7 +1746,8 @@ public class GameView extends View
 		Paint paint1;
 		int interval = 0;
 		float height = 0;
-		int life = 3;
+		int life = 5; // Vida máxima limitada a 5
+		final int MAX_LIFE = 5; // Constante para vida máxima
 		Muro(){
 			paint=new Paint(Paint.ANTI_ALIAS_FLAG);
 			paint.setColor(0xff0000ff);
@@ -1647,6 +1762,10 @@ public class GameView extends View
 
 			float var_16 = basesize*16;
 			float var_32 = basesize*32;
+			
+			// Limitar vida al máximo permitido
+			if(life > MAX_LIFE) life = MAX_LIFE;
+			if(life < 0) life = 0;
 			float var_8=basesize*8;
 
 			RectF rectf = new RectF(0,h-var_32,w,h);
