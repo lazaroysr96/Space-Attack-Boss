@@ -108,6 +108,31 @@ public class MainActivity extends Activity
 					bgsound.start();
 				}
 			});
+		gameview.setOnGameVictoryListener(new GameView.OnGameVictoryListener(){
+
+				@Override
+				public void onGameVictory()
+				{
+					// Transición suave de música con fade out
+					if(bgsound != null && bgsound.isPlaying()){
+						// Reducir volumen gradualmente (fade out)
+						fadeOutMusic(new Runnable() {
+							@Override
+							public void run() {
+								// Una vez completado el fade out, cambiar música
+								bgsound.stop();
+								bgsound=MediaPlayer.create(MainActivity.this,R.raw.bg_victory);
+								bgsound.setLooping(false);
+								
+								// Iniciar con fade in
+								bgsound.setVolume(0f, 0f);
+								bgsound.start();
+								fadeInMusic();
+							}
+						});
+					}
+				}
+			});
 		framelayout.addView(gameview);
 
 		ObjectAnimator anim = new ObjectAnimator();
@@ -137,6 +162,78 @@ public class MainActivity extends Activity
 		bgsound.start();
 		
 		
+	}
+	
+	private Handler fadeHandler = new Handler();
+	private boolean isFading = false;
+	
+	private void fadeOutMusic(final Runnable onComplete) {
+		if(isFading || bgsound == null) return;
+		isFading = true;
+		
+		final int fadeDuration = 2000; // 2 segundos para fade out
+		final int fadeSteps = 20;
+		final float stepVolume = 0.5f / fadeSteps; // Volume actual (0.5) dividido en pasos
+		final int stepDelay = fadeDuration / fadeSteps;
+		
+		Runnable fadeRunnable = new Runnable() {
+			private int currentStep = 0;
+			
+			@Override
+			public void run() {
+				if(currentStep < fadeSteps && bgsound != null && bgsound.isPlaying()) {
+					float newVolume = 0.5f - (stepVolume * currentStep);
+					if(newVolume < 0) newVolume = 0;
+					bgsound.setVolume(newVolume, newVolume);
+					
+					currentStep++;
+					fadeHandler.postDelayed(this, stepDelay);
+				} else {
+					// Fade out completado
+					if(bgsound != null) {
+						bgsound.setVolume(0f, 0f);
+					}
+					isFading = false;
+					if(onComplete != null) {
+						onComplete.run();
+					}
+				}
+			}
+		};
+		
+		fadeHandler.post(fadeRunnable);
+	}
+	
+	private void fadeInMusic() {
+		if(bgsound == null) return;
+		
+		final int fadeDuration = 1500; // 1.5 segundos para fade in
+		final int fadeSteps = 15;
+		final float stepVolume = 1.0f / fadeSteps;
+		final int stepDelay = fadeDuration / fadeSteps;
+		
+		Runnable fadeRunnable = new Runnable() {
+			private int currentStep = 0;
+			
+			@Override
+			public void run() {
+				if(currentStep < fadeSteps && bgsound != null && bgsound.isPlaying()) {
+					float newVolume = stepVolume * currentStep;
+					if(newVolume > 1.0f) newVolume = 1.0f;
+					bgsound.setVolume(newVolume, newVolume);
+					
+					currentStep++;
+					fadeHandler.postDelayed(this, stepDelay);
+				} else {
+					// Fade in completado
+					if(bgsound != null) {
+						bgsound.setVolume(1.0f, 1.0f);
+					}
+				}
+			}
+		};
+		
+		fadeHandler.post(fadeRunnable);
 	}
 	
 	int index=0;

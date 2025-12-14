@@ -13,7 +13,9 @@ public class GameView extends View
 {
 
 	public interface OnGameOverListener {void onGameOver();}
+	public interface OnGameVictoryListener {void onGameVictory();}
 	private OnGameOverListener ongameover;
+	private OnGameVictoryListener ongamevictory;
 	public static float basesize = 1;
 	int speedAtak = 0;
 	int puntos = 0;
@@ -143,22 +145,19 @@ public class GameView extends View
 			canvas.drawText(""+puntos,getDip(25),getDip(25),paintText);
 			//canvas.drawText("RECORD: "+record,getDip(25),getDip(50),paintText);
 			//canvas.drawText("PLANET: "+muro.life,getDip(25),getDip(75),paintText);
-			if(puntos>3000){
+			if(puntos>50){
 				isGameDone=true;
 				if(blocks.size()<=0&&list_boss.size()<=0){
 					isGameVictory=true;
+					// Notificar a MainActivity sobre la victoria
+					if(ongamevictory != null){
+						ongamevictory.onGameVictory();
+					}
 				}
 			}
 
 			if(isGameVictory){
-				Texto gameover = new Texto(getWidth()/2,getHeight()/2);
-				gameover.setText("VICTORIA");
-				gameover.setTextSize(getDip(40));
-				gameover.setTextColor(Color.GREEN);
-				gameover.setStrokeColor(Color.WHITE);
-				gameover.setStrokeWidth(getDip(0.5f));
-				gameover.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"pixel_font.ttf"));
-				gameover.draw(canvas);
+				drawCreditsScreen(canvas);
 			}
 
 		}else{
@@ -325,6 +324,163 @@ public class GameView extends View
 			float dotY = y + height / 2;
 			canvas.drawCircle(dotX, dotY, 2 * basesize, dotPaint);
 		}
+	}
+
+	private void drawCreditsScreen(Canvas canvas){
+		float screenWidth = getWidth();
+		float screenHeight = getHeight();
+		
+		// Fondo oscuro semitransparente
+		Paint backgroundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+		backgroundPaint.setColor(0xCC000000);
+		canvas.drawRect(0, 0, screenWidth, screenHeight, backgroundPaint);
+		
+		// Título principal
+		Texto title = new Texto(screenWidth / 2, screenHeight * 0.15f);
+		title.setText("¡VICTORIA!");
+		title.setTextSize(getDip(50));
+		title.setTextColor(Color.YELLOW);
+		title.setStrokeColor(Color.WHITE);
+		title.setStrokeWidth(getDip(1));
+		title.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"pixel_font.ttf"));
+		title.draw(canvas);
+		
+		// Subtítulo
+		Texto subtitle = new Texto(screenWidth / 2, screenHeight * 0.25f);
+		subtitle.setText("Has salvado el planeta");
+		subtitle.setTextSize(getDip(25));
+		subtitle.setTextColor(Color.CYAN);
+		subtitle.setStrokeColor(Color.WHITE);
+		subtitle.setStrokeWidth(getDip(0.5f));
+		subtitle.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"pixel_font.ttf"));
+		subtitle.draw(canvas);
+		
+		// Puntuación final
+		Texto score = new Texto(screenWidth / 2, screenHeight * 0.35f);
+		score.setText("PUNTUACIÓN FINAL: " + puntos);
+		score.setTextSize(getDip(30));
+		score.setTextColor(Color.GREEN);
+		score.setStrokeColor(Color.WHITE);
+		score.setStrokeWidth(getDip(0.8f));
+		score.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"pixel_font.ttf"));
+		score.draw(canvas);
+		
+		// Sección de créditos
+		float creditsY = screenHeight * 0.45f;
+		float lineSpacing = screenHeight * 0.06f;
+		
+		// Título de créditos
+		Texto creditsTitle = new Texto(screenWidth / 2, creditsY);
+		creditsTitle.setText("CRÉDITOS");
+		creditsTitle.setTextSize(getDip(35));
+		creditsTitle.setTextColor(Color.MAGENTA);
+		creditsTitle.setStrokeColor(Color.WHITE);
+		creditsTitle.setStrokeWidth(getDip(0.8f));
+		creditsTitle.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"pixel_font.ttf"));
+		creditsTitle.draw(canvas);
+		
+		// Lista de créditos
+		String[] credits = {
+			"Desarrollado por: Lazaro Y. S. R.",
+			"Diseño y Programación",
+			"Gráficos y Efectos",
+			"Música y Sonidos",
+			"Testing y QA",
+			"Versión 1.0",
+			"© 2025 Space Attack Boss"
+		};
+		
+		int[] colors = {
+			Color.WHITE,
+			Color.CYAN,
+			Color.GREEN,
+			Color.YELLOW,
+			Color.MAGENTA,
+			Color.RED,
+			Color.BLUE
+		};
+		
+		for(int i = 0; i < credits.length; i++){
+			Texto creditLine = new Texto(screenWidth / 2, creditsY + lineSpacing * (i + 1));
+			creditLine.setText(credits[i]);
+			creditLine.setTextSize(getDip(20));
+			creditLine.setTextColor(colors[i]);
+			creditLine.setStrokeColor(Color.BLACK);
+			creditLine.setStrokeWidth(getDip(0.3f));
+			creditLine.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"pixel_font.ttf"));
+			creditLine.draw(canvas);
+		}
+		
+		// Mensaje final
+		Texto thanks = new Texto(screenWidth / 2, screenHeight * 0.95f);
+		thanks.setText("¡Gracias por jugar!");
+		thanks.setTextSize(getDip(25));
+		thanks.setTextColor(Color.YELLOW);
+		thanks.setStrokeColor(Color.WHITE);
+		thanks.setStrokeWidth(getDip(0.5f));
+		thanks.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"pixel_font.ttf"));
+		thanks.draw(canvas);
+		
+		// Efectos visuales adicionales
+		drawVictoryEffects(canvas, screenWidth, screenHeight);
+	}
+	
+	private void drawVictoryEffects(Canvas canvas, float screenWidth, float screenHeight){
+		// Estrellas parpadeantes de celebración
+		Paint starPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+		starPaint.setColor(Color.YELLOW);
+		
+		// Dibujar estrellas alrededor de la pantalla
+		for(int i = 0; i < 20; i++){
+			float angle = (i * 18) * (float)Math.PI / 180; // Cada 18 grados
+			float radius = Math.min(screenWidth, screenHeight) * 0.4f;
+			float starX = screenWidth / 2 + (float)Math.cos(angle) * radius;
+			float starY = screenHeight / 2 + (float)Math.sin(angle) * radius;
+			
+			// Efecto de parpadeo
+			float alpha = 0.3f + 0.7f * (float)Math.abs(Math.sin(System.currentTimeMillis() / 200.0 + i));
+			starPaint.setAlpha((int)(alpha * 255));
+			
+			// Dibujar estrella simple
+			drawSimpleStar(canvas, starX, starY, 8 * basesize, starPaint);
+		}
+		
+		// Rayos de luz desde el centro
+		Paint rayPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+		rayPaint.setColor(Color.YELLOW);
+		rayPaint.setAlpha(50);
+		
+		for(int i = 0; i < 12; i++){
+			float angle = (i * 30) * (float)Math.PI / 180;
+			float startRadius = Math.min(screenWidth, screenHeight) * 0.1f;
+			float endRadius = Math.min(screenWidth, screenHeight) * 0.45f;
+			
+			float startX = screenWidth / 2 + (float)Math.cos(angle) * startRadius;
+			float startY = screenHeight / 2 + (float)Math.sin(angle) * startRadius;
+			float endX = screenWidth / 2 + (float)Math.cos(angle) * endRadius;
+			float endY = screenHeight / 2 + (float)Math.sin(angle) * endRadius;
+			
+			canvas.drawLine(startX, startY, endX, endY, rayPaint);
+		}
+	}
+	
+	private void drawSimpleStar(Canvas canvas, float centerX, float centerY, float size, Paint paint){
+		// Dibujar una estrella simple de 5 puntas
+		Path starPath = new Path();
+		for(int i = 0; i < 10; i++){
+			float angle = (i * 36 - 90) * (float)Math.PI / 180;
+			float radius = (i % 2 == 0) ? size : size * 0.5f;
+			float x = centerX + (float)Math.cos(angle) * radius;
+			float y = centerY + (float)Math.sin(angle) * radius;
+			
+			if(i == 0){
+				starPath.moveTo(x, y);
+			} else {
+				starPath.lineTo(x, y);
+			}
+		}
+		starPath.close();
+		canvas.drawPath(starPath, paint);
 	}
 
 	private float getDip(float num){
@@ -758,7 +914,7 @@ public class GameView extends View
 			}
 
 			for(Fire fire:fires){
-				if((!fire.isEliminada())&&isClick(fire.x,fire.y,nuclear.x,nuclear.y,basesize*10)){
+				if((!fire.isEliminada())&&isCollisionFireNuclear(fire, nuclear)){
 					nuclear.eliminar();
 					fire.eliminar();
 					//startSound(R.raw.sound4);
@@ -877,10 +1033,16 @@ public class GameView extends View
 		float dy = -1;
 		float animationTime = 0;
 		float trailLength = 0;
+		int fireType = 1; // Tipo de proyectil (1-5)
 
 		Fire(float x,float y){
+			this(x, y, 1); // Por defecto tipo 1
+		}
+		
+		Fire(float x,float y, int type){
 			this.x=x;
 			this.y=y;
+			this.fireType = type;
 			speed=speed*basesize;
 
 			// Paint principal - núcleo del proyectil
@@ -903,6 +1065,11 @@ public class GameView extends View
 		}
 
 		void draw(Canvas canvas){
+			draw(canvas, fireType); // Usa el tipo específico de este proyectil
+		}
+		
+		// Método principal con parámetro de tipo
+		void draw(Canvas canvas, int type){
 			float mx,my;
 			if(dx==0){
 				mx=0;
@@ -922,6 +1089,31 @@ public class GameView extends View
 			animationTime += 0.1f;
 			trailLength = Math.min(trailLength + 0.5f, n.n20);
 
+			// Dibujar según tipo de proyectil
+			switch(type){
+				case 1:
+					drawType1(canvas, mx, my);
+					break;
+				case 2:
+					drawType2(canvas, mx, my);
+					break;
+				case 3:
+					drawType3(canvas, mx, my);
+					break;
+				case 4:
+					drawType4(canvas, mx, my);
+					break;
+				case 5:
+					drawType5(canvas, mx, my);
+					break;
+				default:
+					drawType1(canvas, mx, my);
+					break;
+			}
+		}
+		
+		// Tipo 1: Proyectil de energía estándar (cyan con estela)
+		void drawType1(Canvas canvas, float mx, float my){
 			// Dibujar estela energética
 			for(int i = 0; i < 5; i++){
 				float trailProgress = i / 5f;
@@ -959,6 +1151,149 @@ public class GameView extends View
 				float particleX = x + (float)Math.cos(angle) * basesize * 2;
 				float particleY = y + (float)Math.sin(angle) * basesize * 2;
 				canvas.drawCircle(particleX, particleY, basesize, paint);
+			}
+		}
+		
+		// Tipo 2: Proyectil de láser (rojo lineal)
+		void drawType2(Canvas canvas, float mx, float my){
+			// Dibujar línea de láser principal
+			Paint laserPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+			laserPaint.setStyle(Paint.Style.STROKE);
+			laserPaint.setStrokeWidth(4 * basesize);
+			laserPaint.setColor(0xffff0000);
+			laserPaint.setShadowLayer(8 * basesize, 0, 0, 0xff880000);
+			
+			float laserLength = 30 * basesize;
+			float endX = x - mx * 2;
+			float endY = y - my * 2;
+			
+			canvas.drawLine(x, y, endX, endY, laserPaint);
+			
+			// Dibujar puntos de energía en los extremos
+			laserPaint.setStyle(Paint.Style.FILL);
+			canvas.drawCircle(x, y, basesize * 3, laserPaint);
+			canvas.drawCircle(endX, endY, basesize * 2, laserPaint);
+			
+			// Efecto de brillo
+			Paint glowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+			glowPaint.setColor(0xffff6666);
+			glowPaint.setAlpha(100);
+			canvas.drawCircle(x, y, basesize * 6, glowPaint);
+		}
+		
+		// Tipo 3: Proyectil de plasma (verde esférico)
+		void drawType3(Canvas canvas, float mx, float my){
+			// Dibujar esfera de plasma principal
+			float plasmaSize = (basesize * 5) + (float)Math.sin(animationTime * 3) * basesize;
+			Paint plasmaPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+			plasmaPaint.setStyle(Paint.Style.FILL);
+			plasmaPaint.setColor(0xff00ff00);
+			plasmaPaint.setShadowLayer(10 * basesize, 0, 0, 0xff00aa00);
+			
+			canvas.drawCircle(x, y, plasmaSize, plasmaPaint);
+			
+			// Dibujar núcleo brillante
+			Paint corePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+			corePaint.setStyle(Paint.Style.FILL);
+			corePaint.setColor(0xffffff00);
+			canvas.drawCircle(x, y, basesize * 2, corePaint);
+			
+			// Dibujar arcos eléctricos
+			Paint arcPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+			arcPaint.setStyle(Paint.Style.STROKE);
+			arcPaint.setStrokeWidth(2 * basesize);
+			arcPaint.setColor(0xaaffff00);
+			
+			for(int i = 0; i < 3; i++){
+				float angle = animationTime * 2 + (i * 120) * (float)Math.PI / 180;
+				float arcRadius = plasmaSize + basesize * 2;
+				float arcX = x + (float)Math.cos(angle) * arcRadius;
+				float arcY = y + (float)Math.sin(angle) * arcRadius;
+				
+				canvas.drawLine(x, y, arcX, arcY, arcPaint);
+			}
+		}
+		
+		// Tipo 4: Proyectil de hielo (azul cristalino)
+		void drawType4(Canvas canvas, float mx, float my){
+			// Dibujar cristal de hielo
+			Paint icePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+			icePaint.setStyle(Paint.Style.FILL);
+			icePaint.setColor(0xff00ccff);
+			icePaint.setAlpha(200);
+			
+			// Forma hexagonal de cristal
+			Path hexagon = new Path();
+			float hexSize = basesize * 4;
+			for(int i = 0; i < 6; i++){
+				float angle = i * 60 * (float)Math.PI / 180;
+				float hexX = x + (float)Math.cos(angle) * hexSize;
+				float hexY = y + (float)Math.sin(angle) * hexSize;
+				
+				if(i == 0){
+					hexagon.moveTo(hexX, hexY);
+				} else {
+					hexagon.lineTo(hexX, hexY);
+				}
+			}
+			hexagon.close();
+			
+			canvas.drawPath(hexagon, icePaint);
+			
+			// Dibujar facetas internas
+			icePaint.setColor(0xffffff88);
+			for(int i = 0; i < 3; i++){
+				float angle = i * 120 * (float)Math.PI / 180;
+				float facetX = x + (float)Math.cos(angle) * hexSize * 0.5f;
+				float facetY = y + (float)Math.sin(angle) * hexSize * 0.5f;
+				canvas.drawCircle(facetX, facetY, basesize, icePaint);
+			}
+			
+			// Efecto de escarcha
+			Paint frostPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+			frostPaint.setStyle(Paint.Style.STROKE);
+			frostPaint.setStrokeWidth(1 * basesize);
+			frostPaint.setColor(0xccffffff);
+			canvas.drawPath(hexagon, frostPaint);
+		}
+		
+		// Tipo 5: Proyectil de fuego (naranja explosivo)
+		void drawType5(Canvas canvas, float mx, float my){
+			// Dibujar bola de fuego
+			Paint firePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+			firePaint.setStyle(Paint.Style.FILL);
+			
+			// Capas de fuego con diferentes tonos
+			float fireSize = (basesize * 6) + (float)Math.sin(animationTime * 5) * basesize * 2;
+			
+			// Capa exterior (rojo)
+			firePaint.setColor(0xffff0000);
+			firePaint.setAlpha(150);
+			canvas.drawCircle(x, y, fireSize, firePaint);
+			
+			// Capa media (naranja)
+			firePaint.setColor(0xffff8800);
+			firePaint.setAlpha(200);
+			canvas.drawCircle(x, y, fireSize * 0.8f, firePaint);
+			
+			// Capa interna (amarillo)
+			firePaint.setColor(0xffffff00);
+			firePaint.setAlpha(255);
+			canvas.drawCircle(x, y, fireSize * 0.5f, firePaint);
+			
+			// Partículas de chispas
+			Paint sparkPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+			sparkPaint.setStyle(Paint.Style.FILL);
+			sparkPaint.setColor(0xffffff88);
+			
+			for(int i = 0; i < 8; i++){
+				float angle = animationTime * 4 + (i * 45) * (float)Math.PI / 180;
+				float sparkRadius = fireSize + (float)Math.random() * basesize * 3;
+				float sparkX = x + (float)Math.cos(angle) * sparkRadius;
+				float sparkY = y + (float)Math.sin(angle) * sparkRadius;
+				float sparkSize = basesize * (0.5f + (float)Math.random() * 1.5f);
+				
+				canvas.drawCircle(sparkX, sparkY, sparkSize, sparkPaint);
 			}
 		}
 
@@ -1257,6 +1592,7 @@ public class GameView extends View
 
 		public void start(Canvas canvas){
 
+			// Color del bloque según vida (enemigos sí cambian de color)
 			paint.setColor(getColorLevel(life>0?life-1:0));
 			y=y+speed;
 			RectF rectf = new RectF(x,y,x+w,y+h);
@@ -1379,8 +1715,8 @@ public class GameView extends View
 			cannonBody.lineTo(this.x - n.n15, this.y - n.n10);
 			cannonBody.close();
 
-			// Aplicar color según nivel de vida
-			paint.setColor(getColorLevel(life-1));
+			// Color fijo para el cañón (ya no cambia según vida)
+			paint.setColor(0xff0080ff); // Azul brillante constante
 			canvas.drawPath(cannonBody, paint);
 			canvas.drawPath(cannonBody, paint2);
 
@@ -1448,9 +1784,7 @@ public class GameView extends View
 			if(life > MAX_LIFE) life = MAX_LIFE;
 			if(life < 0) life = 0;
 			
-			if(life>0){
-				paint.setColor(getColorLevel(life-1));
-			}
+			// Ya no se cambia el color según vida, se mantiene azul constante
 		}
 
 		public Fire fire(){
@@ -1665,6 +1999,19 @@ public class GameView extends View
 		float rx = X-x;
 		float ry = Y-y;
 		return java.lang.Math.hypot(rx,ry)<=radio;
+	}
+	
+	// Método mejorado para detección de colisión entre proyectil y item nuclear
+	public static boolean isCollisionFireNuclear(Fire fire, ItemNuclear nuclear){
+		// Usar un radio más grande y preciso para el item nuclear
+		float collisionRadius = 20 * basesize; // Radio aumentado para mejor detección
+		
+		// Calcular distancia entre centros
+		float dx = fire.x - nuclear.x;
+		float dy = fire.y - nuclear.y;
+		float distance = (float)Math.sqrt(dx * dx + dy * dy);
+		
+		return distance <= collisionRadius;
 	}
 
 	public class TextFade extends UnidadBase{
@@ -1991,18 +2338,114 @@ public class GameView extends View
 	}
 
 	public class ItemNuclear extends Base{
-		Bitmap bitmap;
-		Paint paint;
+		Paint paint, paint2, paint3, paint4;
+		float animationTime = 0;
+		float rotationAngle = 0;
+		float pulseSize = 0;
+		
 		public ItemNuclear(float x,float y){
 			super(x,y);
-			bitmap=BitmapFactory.decodeResource(getResources(),R.drawable.nuclear);
-			paint=new Paint(Paint.ANTI_ALIAS_FLAG);
-
+			
+			// Paint principal - núcleo radiactivo
+			paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+			paint.setStyle(Paint.Style.FILL);
+			paint.setColor(0xffff0000); // Rojo intenso
+			
+			// Paint secundario - anillo de advertencia
+			paint2 = new Paint(Paint.ANTI_ALIAS_FLAG);
+			paint2.setStyle(Paint.Style.STROKE);
+			paint2.setStrokeWidth(3 * basesize);
+			paint2.setColor(0xffffff00); // Amarillo de advertencia
+			
+			// Paint para símbolo radiactivo
+			paint3 = new Paint(Paint.ANTI_ALIAS_FLAG);
+			paint3.setStyle(Paint.Style.FILL);
+			paint3.setColor(0xff000000); // Negro para símbolo
+			
+			// Paint para efectos de energía
+			paint4 = new Paint(Paint.ANTI_ALIAS_FLAG);
+			paint4.setStyle(Paint.Style.FILL);
+			paint4.setColor(0xffff6600); // Naranja radiactivo
+			paint4.setAlpha(150);
 		}
 
 		public void draw(Canvas canvas){
-
-			drawBitmapCenter(canvas,bitmap,basesize,x,++y,paint);
+			// Actualizar animaciones
+			animationTime += 0.05f;
+			rotationAngle += 2;
+			pulseSize = (float)Math.sin(animationTime * 3) * 2 * basesize;
+			
+			float centerX = x;
+			float centerY = y;
+			float baseSize = 15 * basesize;
+			
+			// Guardar estado del canvas para rotación
+			canvas.save();
+			canvas.translate(centerX, centerY);
+			canvas.rotate(rotationAngle);
+			canvas.translate(-centerX, -centerY);
+			
+			// Dibujar aura de energía pulsante
+			float auraSize = baseSize + pulseSize;
+			paint4.setAlpha(100 + (int)(Math.sin(animationTime * 4) * 50));
+			canvas.drawCircle(centerX, centerY, auraSize, paint4);
+			
+			// Dibujar círculo exterior (cápsula nuclear)
+			canvas.drawCircle(centerX, centerY, baseSize, paint);
+			
+			// Dibujar anillo de advertencia
+			canvas.drawCircle(centerX, centerY, baseSize - 3 * basesize, paint2);
+			
+			// Dibujar símbolo radiactivo (trébol de 3 hojas)
+			drawRadioactiveSymbol(canvas, centerX, centerY, baseSize * 0.6f);
+			
+			// Dibujar puntos de energía giratorios
+			for(int i = 0; i < 6; i++){
+				float angle = (animationTime * 2) + (i * 60) * (float)Math.PI / 180;
+				float particleX = centerX + (float)Math.cos(angle) * (baseSize + 5 * basesize);
+				float particleY = centerY + (float)Math.sin(angle) * (baseSize + 5 * basesize);
+				
+				paint4.setAlpha(200);
+				canvas.drawCircle(particleX, particleY, 2 * basesize, paint4);
+			}
+			
+			// Restaurar estado del canvas
+			canvas.restore();
+			
+			// Incrementar posición Y para movimiento hacia abajo
+			y++;
+		}
+		
+		private void drawRadioactiveSymbol(Canvas canvas, float centerX, float centerY, float size){
+			// Dibujar círculo central
+			canvas.drawCircle(centerX, centerY, size * 0.2f, paint3);
+			
+			// Dibujar tres hojas del trébol radiactivo
+			for(int i = 0; i < 3; i++){
+				float angle = i * 120 * (float)Math.PI / 180; // 120 grados entre cada hoja
+				
+				// Crear forma de hoja
+				Path leaf = new Path();
+				float leafRadius = size * 0.4f;
+				
+				// Puntos para formar una hoja de trébol
+				float tipX = centerX + (float)Math.cos(angle) * leafRadius;
+				float tipY = centerY + (float)Math.sin(angle) * leafRadius;
+				
+				float base1X = centerX + (float)Math.cos(angle - 0.5f) * (leafRadius * 0.3f);
+				float base1Y = centerY + (float)Math.sin(angle - 0.5f) * (leafRadius * 0.3f);
+				
+				float base2X = centerX + (float)Math.cos(angle + 0.5f) * (leafRadius * 0.3f);
+				float base2Y = centerY + (float)Math.sin(angle + 0.5f) * (leafRadius * 0.3f);
+				
+				// Dibujar hoja
+				leaf.moveTo(centerX, centerY);
+				leaf.quadTo(base1X, base1Y, tipX, tipY);
+				leaf.quadTo(base2X, base2Y, centerX, centerY);
+				leaf.close();
+				
+				canvas.drawPath(leaf, paint3);
+			}
 		}
 	}
 
@@ -2024,12 +2467,12 @@ public class GameView extends View
 			// AudioAttributes es un método para encapsular varios atributos de audio
 			AudioAttributes.Builder attrBuilder = new AudioAttributes.Builder();
 			// Establecer los atributos apropiados de la secuencia de audio
-			attrBuilder.setLegacyStreamType(AudioManager.STREAM_SYSTEM);//STREAM_MUSIC
+			attrBuilder.setLegacyStreamType(AudioManager.STREAM_MUSIC); // Cambiado a STREAM_MUSIC
 			// Cargar un AudioAttributes
 			builder.setAudioAttributes(attrBuilder.build());
 			soundpool = builder.build();
 		}else{
-			soundpool = new SoundPool(10, AudioManager.STREAM_MUSIC, 0);
+			soundpool = new SoundPool(10, AudioManager.STREAM_MUSIC, 0); // Ya estaba en STREAM_MUSIC
 		}
 
 		map_sound.put(1,soundpool.load(getContext(),R.raw.sound1,1));
@@ -2064,12 +2507,24 @@ public class GameView extends View
 			this.x=x;
 			this.y=y;
 			paint=new Paint(Paint.ANTI_ALIAS_FLAG);
-			w=bitmap.getWidth();
-			h=bitmap.getHeight();
+			
+			// Manejar bitmap null para items personalizados
+			if(bitmap != null){
+				w=bitmap.getWidth();
+				h=bitmap.getHeight();
+			} else {
+				// Dimensiones por defecto para items dibujados
+				w = (int)(24 * basesize); // Ancho por defecto
+				h = (int)(24 * basesize); // Alto por defecto
+			}
 		}
 
 		public void draw(Canvas canvas){
-			canvas.drawBitmap(bitmap,x,y,paint);
+			// Solo dibujar bitmap si existe
+			if(bitmap != null){
+				canvas.drawBitmap(bitmap,x,y,paint);
+			}
+			// Si bitmap es null, las clases hijas sobrescriben draw()
 		}
 
 		public void move(Canvas canvas,float x,float y){
@@ -2090,9 +2545,29 @@ public class GameView extends View
 
 
 	public class PlusLifeNave extends BaseItem{
+		Paint paint, paint2, paint3;
+		float animationTime = 0;
+		float rotationAngle = 0;
 
 		PlusLifeNave(float x,float y){
-			super(BitmapFactory.decodeResource(getResources(),R.drawable.plus_nave),x,y);
+			super(null,x,y); // No usamos bitmap
+			
+			// Paint principal - corazón de vida
+			paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+			paint.setStyle(Paint.Style.FILL);
+			paint.setColor(0xff00ff00); // Verde brillante
+			
+			// Paint secundario - contorno
+			paint2 = new Paint(Paint.ANTI_ALIAS_FLAG);
+			paint2.setStyle(Paint.Style.STROKE);
+			paint2.setStrokeWidth(2 * basesize);
+			paint2.setColor(Color.WHITE);
+			
+			// Paint para efectos
+			paint3 = new Paint(Paint.ANTI_ALIAS_FLAG);
+			paint3.setStyle(Paint.Style.FILL);
+			paint3.setColor(0xff00ff00);
+			paint3.setAlpha(100);
 		}
 
 		@Override
@@ -2102,23 +2577,105 @@ public class GameView extends View
 			super.consumir();
 		}
 
-
 		public void move(Canvas canvas)
 		{
 			if(consumido){
 				return;
 			}
-			super.move(canvas,0,2);
-			if(h>getHeight()){
+			
+			// Actualizar animaciones
+			animationTime += 0.1f;
+			rotationAngle += 3;
+			
+			// Dibujar item de vida personalizado
+			drawHealthItem(canvas);
+			
+			// Mover hacia abajo
+			y += 2;
+			
+			if(y > getHeight()){
 				super.destroy();
 			}
+		}
+		
+		private void drawHealthItem(Canvas canvas){
+			float centerX = x;
+			float centerY = y;
+			float baseSize = 12 * basesize;
+			
+			// Guardar estado para rotación
+			canvas.save();
+			canvas.translate(centerX, centerY);
+			canvas.rotate(rotationAngle);
+			canvas.translate(-centerX, -centerY);
+			
+			// Dibujar aura pulsante
+			float pulseSize = (float)Math.sin(animationTime * 3) * 3 * basesize;
+			paint3.setAlpha(80 + (int)(Math.sin(animationTime * 4) * 40));
+			canvas.drawCircle(centerX, centerY, baseSize + pulseSize, paint3);
+			
+			// Dibujar corazón de vida
+			drawHeart(canvas, centerX, centerY, baseSize);
+			
+			// Dibujar símbolo "+" en el centro
+			paint2.setColor(Color.WHITE);
+			paint2.setStrokeWidth(3 * basesize);
+			float crossSize = baseSize * 0.4f;
+			canvas.drawLine(centerX - crossSize, centerY, centerX + crossSize, centerY, paint2);
+			canvas.drawLine(centerX, centerY - crossSize, centerX, centerY + crossSize, paint2);
+			
+			// Restaurar estado
+			canvas.restore();
+		}
+		
+		private void drawHeart(Canvas canvas, float centerX, float centerY, float size){
+			Path heart = new Path();
+			
+			// Crear forma de corazón
+			float width = size;
+			float height = size * 0.9f;
+			
+			// Lado izquierdo del corazón
+			heart.moveTo(centerX, centerY + height * 0.3f);
+			heart.cubicTo(centerX - width * 0.5f, centerY - height * 0.3f,
+						 centerX - width * 0.5f, centerY - height * 0.7f,
+						 centerX, centerY - height * 0.4f);
+			
+			// Lado derecho del corazón
+			heart.cubicTo(centerX + width * 0.5f, centerY - height * 0.7f,
+						 centerX + width * 0.5f, centerY - height * 0.3f,
+						 centerX, centerY + height * 0.3f);
+			
+			heart.close();
+			canvas.drawPath(heart, paint);
+			canvas.drawPath(heart, paint2);
 		}
 	}
 
 	public class PlusLifeMuro extends BaseItem{
+		Paint paint, paint2, paint3;
+		float animationTime = 0;
+		float rotationAngle = 0;
 
 		PlusLifeMuro(float x,float y){
-			super(BitmapFactory.decodeResource(getResources(),R.drawable.plus_muro),x,y);
+			super(null,x,y); // No usamos bitmap
+			
+			// Paint principal - escudo de planeta
+			paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+			paint.setStyle(Paint.Style.FILL);
+			paint.setColor(0xff0080ff); // Azul brillante
+			
+			// Paint secundario - contorno
+			paint2 = new Paint(Paint.ANTI_ALIAS_FLAG);
+			paint2.setStyle(Paint.Style.STROKE);
+			paint2.setStrokeWidth(2 * basesize);
+			paint2.setColor(Color.WHITE);
+			
+			// Paint para efectos
+			paint3 = new Paint(Paint.ANTI_ALIAS_FLAG);
+			paint3.setStyle(Paint.Style.FILL);
+			paint3.setColor(0xff0080ff);
+			paint3.setAlpha(100);
 		}
 
 		@Override
@@ -2128,18 +2685,86 @@ public class GameView extends View
 			super.consumir();
 		}
 
-
 		public void move(Canvas canvas)
 		{
 			if(consumido){
 				return;
 			}
-			super.move(canvas,0,2);
-			if(h>getHeight()){
+			
+			// Actualizar animaciones
+			animationTime += 0.1f;
+			rotationAngle -= 3; // Rotación en sentido contrario
+			
+			// Dibujar item de vida del muro personalizado
+			drawPlanetHealthItem(canvas);
+			
+			// Mover hacia abajo
+			y += 2;
+			
+			if(y > getHeight()){
 				super.destroy();
 			}
 		}
-
+		
+		private void drawPlanetHealthItem(Canvas canvas){
+			float centerX = x;
+			float centerY = y;
+			float baseSize = 12 * basesize;
+			
+			// Guardar estado para rotación
+			canvas.save();
+			canvas.translate(centerX, centerY);
+			canvas.rotate(rotationAngle);
+			canvas.translate(-centerX, -centerY);
+			
+			// Dibujar aura pulsante
+			float pulseSize = (float)Math.sin(animationTime * 3) * 3 * basesize;
+			paint3.setAlpha(80 + (int)(Math.sin(animationTime * 4) * 40));
+			canvas.drawCircle(centerX, centerY, baseSize + pulseSize, paint3);
+			
+			// Dibujar escudo de planeta
+			drawPlanetShield(canvas, centerX, centerY, baseSize);
+			
+			// Dibujar símbolo "+" en el centro
+			paint2.setColor(Color.WHITE);
+			paint2.setStrokeWidth(3 * basesize);
+			float crossSize = baseSize * 0.4f;
+			canvas.drawLine(centerX - crossSize, centerY, centerX + crossSize, centerY, paint2);
+			canvas.drawLine(centerX, centerY - crossSize, centerX, centerY + crossSize, paint2);
+			
+			// Restaurar estado
+			canvas.restore();
+		}
+		
+		private void drawPlanetShield(Canvas canvas, float centerX, float centerY, float size){
+			// Dibujar círculo principal (planeta)
+			canvas.drawCircle(centerX, centerY, size, paint);
+			canvas.drawCircle(centerX, centerY, size, paint2);
+			
+			// Dibujar anillo de protección
+			float ringWidth = size * 0.3f;
+			RectF ringOuter = new RectF(centerX - size - ringWidth, centerY - size - ringWidth,
+									   centerX + size + ringWidth, centerY + size + ringWidth);
+			RectF ringInner = new RectF(centerX - size + ringWidth/2, centerY - size + ringWidth/2,
+									   centerX + size - ringWidth/2, centerY + size - ringWidth/2);
+			
+			// Crear forma de anillo
+			Path ringPath = new Path();
+			ringPath.addOval(ringOuter, Path.Direction.CW);
+			ringPath.addOval(ringInner, Path.Direction.CCW);
+			
+			paint3.setAlpha(150);
+			canvas.drawPath(ringPath, paint3);
+			
+			// Dibujar continentes (formas irregulares)
+			paint.setColor(0xff004080); // Azul más oscuro para continentes
+			canvas.drawCircle(centerX - size * 0.3f, centerY - size * 0.2f, size * 0.25f, paint);
+			canvas.drawCircle(centerX + size * 0.4f, centerY + size * 0.3f, size * 0.2f, paint);
+			canvas.drawCircle(centerX + size * 0.1f, centerY - size * 0.4f, size * 0.15f, paint);
+			
+			// Restaurar color principal
+			paint.setColor(0xff0080ff);
+		}
 	}
 
 	public static class Texto{
@@ -2469,4 +3094,11 @@ public class GameView extends View
 			this.ongameover=ongameover;
 		}
 	}
+
+	public void setOnGameVictoryListener(OnGameVictoryListener ongamevictory){
+		if(ongamevictory!=null){
+			this.ongamevictory=ongamevictory;
+		}
+	}
+
 }
