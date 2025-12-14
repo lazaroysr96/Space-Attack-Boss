@@ -2,13 +2,28 @@
 <FrameLayout
 	xmlns:android="http://schemas.android.com/apk/res/android"
 	android:layout_width="match_parent"
-	android:layout_height="match_parent">
+	android:layout_height="match_parent"
+	android:background="#000000">
+
+	<ImageView
+		android:src="@drawable/h1"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		android:layout_gravity="center"
+		android:id="@+id/mainImageView1"
+		android:scaleType="centerCrop"/>
+
+	<ImageView
+		android:src="@drawable/h1"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		android:scaleType="centerCrop"
+		android:id="@+id/mainImageView2"/>
 
 	<FrameLayout
 		android:layout_width="match_parent"
 		android:layout_height="match_parent"
-		android:id="@+id/mainFrameLayout"
-		android:background="@drawable/background1">
+		android:id="@+id/mainFrameLayout">
 
 		<TextView
 			android:layout_width="match_parent"
@@ -16,9 +31,9 @@
 			android:text="Text"
 			android:id="@+id/mainTextView1"
 			android:layout_gravity="center"
-			android:textColor="#FF0F00"
-			android:textSize="40sp"
-			android:gravity="center"
+			android:textColor="#18FF00"
+			android:textSize="28sp"
+			android:gravity="left"
 			android:padding="40dp"
 			android:shadowColor="#FAE800"
 			android:shadowDx="1.0"

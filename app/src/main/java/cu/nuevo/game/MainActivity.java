@@ -6,12 +6,12 @@ import android.widget.*;
 import android.graphics.drawable.*;
 import android.graphics.*;
 import android.view.*;
-import android.animation.*;
-import android.view.animation.*;
 import android.content.*;
 import java.io.*;
 import android.view.SurfaceHolder.*;
 import android.media.*;
+import android.animation.*;
+import android.view.animation.*;
 
 public class MainActivity extends Activity 
 {
@@ -20,32 +20,34 @@ public class MainActivity extends Activity
 	MediaPlayer bgsound;
 	GameView gameview;
 	TextView history;
+	ImageView img1,img2;
+	private boolean isGameStarted=false;
 	String[] historia = {
-    "Durante mucho tiempo se pensó que estábamos solos",
-    "La humanidad anhelaba el contacto con otras civilizaciones",
-    "Durante mucho tiempo, se enviaron mensajes por todo el universo",
-    "Finalmente alguien nos escuchó",
-    "Mas sus intenciones",
-    "No eran amistosas",
-    "Era demasiado tarde",
-    "Nuestro planeta ya estaba ubicado",
-    "Las naciones se unieron en una sola",
-    "Crearon la Liga de Defensa Planetaria",
-    "El futuro de la humanidad era incierto",
-    "Se construyó un muro para la defensa del planeta",
-    "Aunque este era capaz de interceptar los asteroides enviados por el enemigo",
-    "No era suficiente",
-    "No podía detener el ataque directo de los alienígenas",
-    "La Liga de Defensa Planetaria utilizó sus últimos recursos en el desarrollo del arma de defensa definitiva",
-    "Una nave con capacidad ofensiva para enfrentar cualquier enemigo",
-    "El enemigo lanzó su última oleada",
-    "El todo por el todo",
-    "Eres el último piloto",
-    "Tienes la misión de resistir tanto como sea posible",
-    "No permitas que el enemigo alcance el planeta",
-    "¡¡¡Listo para la batalla!!!"
-};
-
+		"Durante mucho tiempo se pensó que estábamos solos",
+		"La humanidad anhelaba el contacto con otras civilizaciones",
+		"Durante mucho tiempo, se enviaron mensajes por todo el universo",
+		"Finalmente alguien nos escuchó",
+		"Mas sus intenciones",
+		"No eran amistosas",
+		"Era demasiado tarde",
+		"Nuestro planeta ya estaba ubicado",
+		"Las naciones se unieron en una sola",
+		"Crearon la Liga de Defensa Planetaria",
+		"El futuro de la humanidad era incierto",
+		"Se construyó un muro para la defensa del planeta",
+		"Aunque este era capaz de interceptar los asteroides enviados por el enemigo",
+		"No era suficiente",
+		"No podía detener el ataque directo de los alienígenas",
+		"La Liga de Defensa Planetaria utilizó sus últimos recursos en el desarrollo del arma de defensa definitiva",
+		"Una nave con capacidad ofensiva para enfrentar cualquier enemigo",
+		"El enemigo lanzó su última oleada",
+		"El todo por el todo",
+		"Eres el último piloto",
+		"Tienes la misión de resistir tanto como sea posible",
+		"No permitas que el enemigo alcance el planeta",
+		"¡¡¡Listo para la batalla!!!"
+	};
+	
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
@@ -54,6 +56,9 @@ public class MainActivity extends Activity
 		framelayout = findViewById(R.id.mainFrameLayout);
 		play= findViewById(R.id.mainImageView);
 		history=findViewById(R.id.mainTextView1);
+		img1=findViewById(R.id.mainImageView1);
+		img2=findViewById(R.id.mainImageView2);
+		
 		if(getActionBar()!=null){
 			getActionBar().hide();
 		}
@@ -74,11 +79,7 @@ public class MainActivity extends Activity
 				@Override
 				public void onClick(View p1)
 				{
-					if(index==0){
-						startGame();
-					}else{
-						mostrarHistoria();
-					}
+					//nextAction();
 					
 				}
 			});
@@ -93,6 +94,7 @@ public class MainActivity extends Activity
     }
 	
 	private void startGame(){
+		isGameStarted=true;
 		framelayout.removeAllViews();
 		gameview= new GameView(this);
 		gameview.setOnGameOverListener(new GameView.OnGameOverListener(){
@@ -120,14 +122,15 @@ public class MainActivity extends Activity
 			bgsound.stop();
 			bgsound=null;
 		}
-		bgsound = MediaPlayer.create(this,R.raw.bg1);
+		bgsound = MediaPlayer.create(this,R.raw.bg_game);
 		bgsound.setVolume(0.5f,0.5f);
 		bgsound.setOnCompletionListener(new MediaPlayer.OnCompletionListener(){
 
 				@Override
 				public void onCompletion(MediaPlayer p1)
 				{
-					bgsound = MediaPlayer.create(MainActivity.this,R.raw.bg2);
+					//cambiar
+					bgsound = MediaPlayer.create(MainActivity.this,R.raw.bg_game);
 					bgsound.start();
 				}
 			});
@@ -171,7 +174,61 @@ public class MainActivity extends Activity
 	}
 	
 	
+	private void nextImage(final int id){
+		img2.setImageResource(id);
+		img2.setVisibility(View.VISIBLE);
+		ObjectAnimator anim = new ObjectAnimator();
+		anim.setTarget(img2);
+		anim.setPropertyName("alpha");
+		anim.setDuration(1000);
+		anim.setFloatValues(0,1);
+		anim.addListener(new Animator.AnimatorListener(){
+
+				@Override
+				public void onAnimationStart(Animator p1)
+				{
+					// TODO: Implement this method
+				}
+
+				@Override
+				public void onAnimationEnd(Animator p1)
+				{
+					img1.setImageResource(id);
+					img2.setVisibility(View.GONE);
+				}
+
+				@Override
+				public void onAnimationCancel(Animator p1)
+				{
+					// TODO: Implement this method
+				}
+
+				@Override
+				public void onAnimationRepeat(Animator p1)
+				{
+					// TODO: Implement this method
+				}
+			});
+		anim.start();
+	}
 	
+	private void nextAction(){
+		if(isGameStarted){return;}
+		if(index==0){
+			startGame();
+		}else{
+			mostrarHistoria();
+		}
+
+		if(index==3){
+			nextImage(R.drawable.h3);
+		}
+
+		if(index==18){
+			img1.setScaleType(ImageView.ScaleType.FIT_CENTER);
+			nextImage(R.drawable.h5);
+		}
+	}
 	
 	
 	private void animateTerminalText(final TextView textView, final String fullText) {
@@ -187,9 +244,17 @@ public class MainActivity extends Activity
                     charIndex[0]++;
 
                     // Velocidad de escritura variable para efecto más realista
-                    int delay = 100 ; // 50-80ms por caracter
+                    int delay = 50 ; // 50-80ms por caracter
                     textHandler.postDelayed(this, delay);
                 } else {
+					textHandler.postDelayed(new Runnable(){
+
+							@Override
+							public void run()
+							{
+								nextAction();
+							}
+						},3000);
                     // Efecto de parpadeo del cursor al finalizar
                     //animateCursor(textView, fullText);
                 }

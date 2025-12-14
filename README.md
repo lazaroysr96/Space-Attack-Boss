@@ -1,44 +1,26 @@
-# Space Attack Boss
+Space Attack Boss
+=================
 
-Un juego de disparos espaciales para Android con enemigos mejorados y jefes desafiantes.
+Autor: Lazaro Yunier Salazar Rodriguez
 
-## Características
+Juego de disparos espaciales para Android.
 
-- **Nave mejorada**: Diseño espacial detallado con motores animados y escudo energético
-- **Enemigos mejorados**: Diamantes rotantes con efectos visuales avanzados
-- **Jefe desafiante**: Enemigo hexagonal con escudo pulsante y múltiples ojos
-- **Sistema de sonido**: Efectos de audio para todas las acciones del juego
-- **Power-ups**: Disparo triple y aumento de velocidad
-- **Sistema de puntuación**: Récord máximo persistente
-- **Gráficos personalizados**: Todos los recursos visuales originales
+Instalación rápida (Linux)
+--------------------------
 
-## Capturas de pantalla
+1) Clonar y entrar al proyecto:
+   git clone https://github.com/lazaroysr96/Space-Attack-Boss.git
+   cd Space-Attack-Boss
 
-*(Agrega capturas de pantalla del juego)*
+2) Configurar SDK Android (ejemplo):
+   export ANDROID_HOME="$HOME/android-sdk"
+   export PATH="$PATH:$ANDROID_HOME/platform-tools:$ANDROID_HOME/cmdline-tools/latest/bin:$(pwd)/gradle-5.6.4/bin"
 
-## Instalación
+3) Compilar APK debug:
+   ./gradle-5.6.4/bin/gradle assembleDebug
 
-1. Clona el repositorio
-2. Abre en Android Studio
-3. Sincroniza el proyecto con Gradle
-4. Ejecuta en un dispositivo Android o emulador
+4) Instalar en dispositivo conectado por ADB:
+   adb install -r app/build/outputs/apk/debug/app-debug.apk
 
-## Requisitos
-
-- Android API 21+
-- Android Studio 3.0+
-- Gradle 5.6.4
-
-## Controles
-
-- **Movimiento**: Toca y arrastra en la pantalla
-- **Disparo**: Automático al tocar
-- **Pausa**: Botón de atrás del dispositivo
-
-## Desarrollado por
-
-Yunior - Desarrollador Android
-
-## Licencia
-
-MIT License - Ver archivo LICENSE para detalles
+5) Lanzar el juego:
+   adb shell am start -n cu.spaceattack.boss/.MainActivity

@@ -1,4 +1,5 @@
 package cu.spaceattack.boss;
+
 import android.view.*;
 import android.content.*;
 import android.graphics.*;
@@ -10,7 +11,7 @@ import android.os.*;
 
 public class GameView extends View
 {
-	
+
 	public interface OnGameOverListener {void onGameOver();}
 	private OnGameOverListener ongameover;
 	public static float basesize = 1;
@@ -31,9 +32,13 @@ public class GameView extends View
 	ArrayList<PlusLifeNave> list_pluslife = new ArrayList<>();
 	ArrayList<PlusLifeMuro> list_pluslife_muro = new ArrayList<>();
 	ArrayList<Enemigo2> list_enemigo2 = new ArrayList<>();
+	ArrayList<Alien1> list_alien1 = new ArrayList<>();
 	ArrayList<Boss> list_boss = new ArrayList<>();
 	int lastBossScore = 0;
 	
+	//padding
+	int padding=50;
+
 	ArrayList<Item> listitem = new ArrayList<>();
 	Runnable runnable,runnable2;
 	Muro muro;
@@ -47,39 +52,40 @@ public class GameView extends View
 	SharedPreferences gameData;
 	private int level=1;
 	int record = 0;
-	
+
 	RectF rectf_game;
 	ArrayList<Fire> tmp_list_fire = new ArrayList<>();
-	
+
 	public GameView(Context context){
 		super(context);
 		init();
 	}
-	
+
 	public GameView(Context context, AttributeSet attrs){
 		super(context, attrs);
 		init();
 	}
-	
+
 	public GameView(Context context, AttributeSet attrs, int defStyleAttr){
 		super(context, attrs, defStyleAttr);
 		init();
 	}
-	
+
 	private void init(){
 		gameData=getContext().getSharedPreferences("gameData",Context.MODE_PRIVATE);
 		basesize=getResources().getDisplayMetrics().density;
 		n=new N(basesize);
-		setBackgroundResource(R.drawable.background1);
+		padding=(int)(basesize*padding);
+		setBackgroundResource(R.drawable.h4);
 		paintText=new Paint(Paint.ANTI_ALIAS_FLAG);
 		paintText.setTextSize(14*basesize);
 		paintText.setColor(textColor);
 		paintText.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"pixel_font.ttf"));
-		
+
 		record=gameData.getInt("record",0);
 		createSoundPool();
-		
-		
+
+
 	}
 
 	@Override
@@ -90,38 +96,38 @@ public class GameView extends View
 		rectf_game=new RectF(0,0,w,h);
 	}
 
-	
-	
-	
+
+
+
 	@Override
 	protected void onDraw(Canvas canvas){
 		super.onDraw(canvas);
-		
-		
-		
+
+
+
 		if(muro==null){
 			muro=new Muro();
 		}
 		muro.draw(canvas);
 		generate();
 		if(!nave.isEliminada()){
-		nave.draw2(canvas,x,y-n.n40);
+			nave.draw2(canvas,x,y-n.n40);
 		}
-		
+
 		gameStart(canvas);
-		
+
 		// Solo mostrar puntos y record si el juego no ha terminado
 		if(muro.life>0){
 			canvas.drawText("PUNTOS: "+puntos,getDip(25),getDip(25),paintText);
 			canvas.drawText("RECORD: "+record,getDip(25),getDip(50),paintText);
 			canvas.drawText("PLANET: "+muro.life,getDip(25),getDip(75),paintText);
-			if(puntos>50){
+			if(puntos>3000){
 				isGameDone=true;
 				if(blocks.size()<=0&&list_boss.size()<=0){
 					isGameVictory=true;
 				}
 			}
-			
+
 			if(isGameVictory){
 				Texto gameover = new Texto(getWidth()/2,getHeight()/2);
 				gameover.setText("VICTORIA");
@@ -132,10 +138,10 @@ public class GameView extends View
 				gameover.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"pixel_font.ttf"));
 				gameover.draw(canvas);
 			}
-			
+
 		}else{
-			
-			
+
+
 			Texto gameover = new Texto(getWidth()/2,getHeight()/2);
 			gameover.setText("GAME OVER");
 			gameover.setTextSize(getDip(40));
@@ -144,7 +150,7 @@ public class GameView extends View
 			gameover.setStrokeWidth(getDip(0.5f));
 			gameover.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"pixel_font.ttf"));
 			gameover.draw(canvas);
-			
+
 			gameover = new Texto(getWidth()/2,(getHeight()/2)-getDip(55));
 			gameover.setText("PLANETA ALIEGENIZADO!!!");
 			gameover.setTextSize(getDip(25));
@@ -153,7 +159,7 @@ public class GameView extends View
 			gameover.setStrokeWidth(getDip(0.5f));
 			gameover.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"pixel_font.ttf"));
 			gameover.draw(canvas);
-			
+
 			Texto tt = new Texto(getWidth()/2,(getHeight()/2)+getDip(50));
 			tt.setText("PUNTOS "+puntos);
 			tt.setTextSize(getDip(30));
@@ -161,23 +167,23 @@ public class GameView extends View
 			tt.setStrokeColor(Color.RED);
 			tt.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"pixel_font.ttf"));
 			tt.draw(canvas);
-			
+
 			if(puntos>record){
 				tt.setText("NUEVO RECORD");
 				tt.y=tt.y-getDip(100);
 				tt.draw(canvas);
 			}
-			
+
 			if(ongameover!=null){
 				ongameover.onGameOver();
 			}
-			
+
 		}
 		if(!isGameOver||explocionList.size()>0){
 			if(!isGameVictory||explocionList.size()>0){
 				invalidate();
 			}
-		
+
 		}
 	}
 
@@ -199,121 +205,135 @@ public class GameView extends View
 		}
 		return true;
 	}
-	
-	
+
+
 	private void event_down(){
 	}
 	private void event_move(){
 	}
 	private void event_up(){
 	}
-	
+
 	private float getDip(float num){
 		return num*basesize;
 	}
-	
+
 	void disparar(){
 		if(nave.isEliminada()){return;}
-		
-			if(++speedAtak>=nave.speedAtak){
-					if(multiatak>0){
-					Fire fire1=nave.fire();
-					fire1.dx=0.1f;
-					fires.add(fire1);
-					Fire fire2=nave.fire();
-					fire2.dx=-0.1f;
-					fires.add(fire2);
-					}
-					if(multiatak>1){
-					Fire fire3=nave.fire();
-					fire3.dx=0.2f;
-					fires.add(fire3);
-					Fire fire4=nave.fire();
-					fire4.dx=-0.2f;
-					fires.add(fire4);
-					}
-					if(multiatak>2){
-						Fire fire5=nave.fire();
-						fire5.dx=0.3f;
-						fires.add(fire5);
-						Fire fire6=nave.fire();
-						fire6.dx=-0.3f;
-						fires.add(fire6);
-					}
-				
-				fires.add(nave.fire());
-				speedAtak=0;
 
+		if(++speedAtak>=nave.speedAtak){
+			if(multiatak>0){
+				Fire fire1=nave.fire();
+				fire1.dx=0.1f;
+				fires.add(fire1);
+				Fire fire2=nave.fire();
+				fire2.dx=-0.1f;
+				fires.add(fire2);
 			}
+			if(multiatak>1){
+				Fire fire3=nave.fire();
+				fire3.dx=0.2f;
+				fires.add(fire3);
+				Fire fire4=nave.fire();
+				fire4.dx=-0.2f;
+				fires.add(fire4);
+			}
+			if(multiatak>2){
+				Fire fire5=nave.fire();
+				fire5.dx=0.3f;
+				fires.add(fire5);
+				Fire fire6=nave.fire();
+				fire6.dx=-0.3f;
+				fires.add(fire6);
+			}
+
+			fires.add(nave.fire());
+			speedAtak=0;
+
+		}
 	}
-	
-	
-	
-	
+
+
+
+
 	int interval_block;
 	int interval_fire;
 	int interval_ene;
+	int interval_alien1;
 	public void generate(){
 		if(isGameOver){return;}
-		
-		if(!isGameDone){
-		++ interval_block;
-		if(++interval_fire==50){
-			interval_fire=0;
-			Asteroide ast = new Asteroide(getRandom(50,getWidth()-50),0);
-			ast.speed=getRandom(4,6);
-			asteroides.add(ast);
-		}
-		if(interval_block==75){
-			interval_block=0;
 
-			Block block = new Block(getRandom(50,getWidth()-50),0);
-			block.life=getRandom(1,level);
-			block.speed=getRandom(1,nivel);
-			blocks.add(block);
+		if(!isGameDone){
+			if(++interval_fire==50){
+				interval_fire=0;
+				Asteroide ast = new Asteroide(getRandom(50,getWidth()-50),0);
+				ast.speed=getRandom(4,6);
+				asteroides.add(ast);
+			}
 			
-		}
-		if(puntos>100){
-		if(++interval_ene==200){
-			interval_ene=0;
-			Enemigo2 ene= new Enemigo2(getRandom(50,getWidth()-50),0);
-			ene.life=3;
-			list_enemigo2.add(ene);
-		}
+			if(++interval_block==75){
+				interval_block=0;
+
+				Block block = new Block(getRandom(50,getWidth()-50),0);
+				block.life=getRandom(1,level);
+				block.speed=getRandom(1,nivel);
+				blocks.add(block);
+
+			}
+			
+			if(++interval_alien1==1000){
+				interval_alien1=0;
+				Alien1 aln1 = new Alien1(getRandom(padding,getWidth()-padding),0);
+				aln1.life=5;
+				aln1.speed=1.5f;
+				list_alien1.add(aln1);
+			}
+			
+			if(puntos>100){
+				if(++interval_ene==200){
+					interval_ene=0;
+					Enemigo2 ene= new Enemigo2(getRandom(50,getWidth()-50),0);
+					ene.life=3;
+					list_enemigo2.add(ene);
+				}
+			}
+
+			
+			if(puntos >= 50 && (puntos - lastBossScore) >= 50){
+				Boss jefe = new Boss(getRandom(padding, getWidth()-padding), 0);
+				jefe.life = 10; 
+				list_boss.add(jefe);
+				lastBossScore = puntos;
+			}
 		}
 		
-		// Jefe cada 50 puntos
-		if(puntos >= 50 && (puntos - lastBossScore) >= 50){
-			Boss jefe = new Boss(getRandom(50, getWidth()), -50);
-			jefe.life = 10; // Jefe más resistente
-			list_boss.add(jefe);
-			lastBossScore = puntos;
-			textfades.add(new TextFade("¡JEFE!", (float)getWidth()/2, (float)getHeight()/2, 0xffff0000));
-		}
-		}
 		if(isGameDone&&(list_boss.size()<=0)&&(blocks.size()<=0)){return;}
-		
+
 		disparar();
 
 	}
-	
-	
-	
-	
+
+
+
+
 	public void gameStart(Canvas canvas){
-		
+
 		for(Explocion explocion:list_explocion){
 			explocion.draw(canvas);
 		}
-		
+
 		for(Fire fire:fires){
 			fire.draw(canvas);
 		}
-		
+
 		for(Block block:blocks){
 			block.start(canvas);
 		}
 		
+		for(Alien1 aln1:list_alien1){
+			aln1.start(canvas);
+		}
+
 		for(Enemigo2 ene :list_enemigo2){
 			ene.move(canvas,0,1);
 			if(ene.y>getHeight()){
@@ -344,10 +364,10 @@ public class GameView extends View
 				//fires.add(fire);
 			}
 		}
-		
+
 		for(ItemTriple it :itemtriple){
 			it.draw(canvas);
-			
+
 			if(isClick(nave.x,nave.y,it.x,it.y,20*basesize)){
 				it.eliminar();
 				textfades.add(new TextFade("Triple fuego",(float)getWidth()/2,(float)getHeight()/2,0xff00ff00));
@@ -355,12 +375,12 @@ public class GameView extends View
 				//startSound(R.raw.sound2);
 				startSoundPool(2);
 			}
-			
-			
+
+
 			if(it.x>getHeight()){it.eliminar();}
 		}
-		
-		
+
+
 		for(ItemSpeed is :itemSpeed){
 			is.draw(canvas);
 			if(isClick(nave.x,nave.y,is.x,is.y,20*basesize)){
@@ -372,9 +392,9 @@ public class GameView extends View
 					textfades.add(new TextFade("+ speed atak",(float)getWidth()/2,(float)getHeight()/2,0xff00ff00));
 				}else{
 					if(runnable==null){
-					final int speed = nave.speedAtak;
-					nave.speedAtak=5;
-					runnable = new Runnable(){
+						final int speed = nave.speedAtak;
+						nave.speedAtak=5;
+						runnable = new Runnable(){
 
 							@Override
 							public void run()
@@ -384,137 +404,151 @@ public class GameView extends View
 							}
 						};
 						getHandler().postDelayed(runnable,3000);
-						}else{
-							getHandler().removeCallbacks(runnable);
-							getHandler().postDelayed(runnable,3000);
-						}
-						
+					}else{
+						getHandler().removeCallbacks(runnable);
+						getHandler().postDelayed(runnable,3000);
+					}
+
 					textfades.add(new TextFade("IPER-SPEED",(float)getWidth()/2,(float)getHeight()/2,0xff00ff00));
-						
+
 				}
 			}
 			if(is.y>getHeight()){
 				is.eliminar();
 			}
 		}
-		
+
 		for(TextFade textfade:textfades){
 			textfade.draw(canvas);
 		}
-		
-		
+
+
 		for(Fire fire :fires){
 			if(!rectf_game.contains(fire.x,fire.y)){
 				fire.eliminar();
 			}else{
 				for(Enemigo2 ene:list_enemigo2){
 					if(!ene.anulable){
-					if(ene.rectf.contains(fire.x,fire.y)){
-						--ene.life;
-						fire.eliminar();
-						if(ene.life<=0){
-						ene.anular();
-						// Jefe da 50 puntos (inicialmente life=10)
-						int puntosGanados = (ene.life == 9) ? 50 : 10;
-						puntos += puntosGanados;
-						textfades.add(new TextFade("+"+puntosGanados,(float)ene.x,(float)ene.y,0xff00ff00));
-						list_explocion.add(new Explocion(fire.x,fire.y,basesize*25,0xffff00ff));
-						startSoundPool(6);
-						blocks.add(new Block(ene.x,ene.y));
-						}
-					}}
+						if(ene.rectf.contains(fire.x,fire.y)){
+							--ene.life;
+							fire.eliminar();
+							if(ene.life<=0){
+								ene.anular();
+								// Jefe da 50 puntos (inicialmente life=10)
+								int puntosGanados = (ene.life == 9) ? 50 : 10;
+								puntos += puntosGanados;
+								textfades.add(new TextFade("+"+puntosGanados,(float)ene.x,(float)ene.y,0xff00ff00));
+								list_explocion.add(new Explocion(fire.x,fire.y,basesize*25,0xffff00ff));
+								startSoundPool(6);
+								blocks.add(new Block(ene.x,ene.y));
+							}
+						}}
 				}
 				// Colisiones con jefes
 				for(Boss jefe:list_boss){
 					if(!jefe.anulable){
-					if(jefe.rectf.contains(fire.x,fire.y)){
-						--jefe.life;
-						fire.eliminar();
-						if(jefe.life<=0){
-						jefe.anular();
-						// Jefe da 50 puntos
-						int puntosGanados = 50;
-						puntos += puntosGanados;
-						textfades.add(new TextFade("+"+puntosGanados,(float)jefe.x,(float)jefe.y,0xff00ff00));
-						list_explocion.add(new Explocion(fire.x,fire.y,basesize*25,0xffff00ff));
-						startSoundPool(6);
-						blocks.add(new Block(jefe.x,jefe.y));
-						}
-					}}
+						if(jefe.rectf.contains(fire.x,fire.y)){
+							--jefe.life;
+							fire.eliminar();
+							if(jefe.life<=0){
+								jefe.anular();
+								// Jefe da 50 puntos
+								int puntosGanados = 5;
+								puntos += puntosGanados;
+								textfades.add(new TextFade("+"+puntosGanados,(float)jefe.x,(float)jefe.y,0xff00ff00));
+								list_explocion.add(new Explocion(fire.x,fire.y,basesize*25,0xffff00ff));
+								startSoundPool(6);
+								//blocks.add(new Block(jefe.x,jefe.y));
+								list_nuclear.add(new ItemNuclear(jefe.x,jefe.y));
+							}
+						}}
 				}
+				
+				for(Alien1 aln:list_alien1){
+					if(!aln.isEliminada()){
+						if(isAfecte(aln.x,aln.y,aln.w,aln.h,fire.x,fire.y)){
+							if(--aln.life==0){
+								++puntos;
+								aln.eliminar();
+							}
+						}
+					}
+				}
+				
+				
 				for(Block block:blocks){
 					if(!block.isEliminada()){
-					if(isAfecte(block.x,block.y,block.w,block.h,fire.x,fire.y)){
-						fire.eliminar();
-						if(--block.life==0){
-							
-							switch(++puntos){
-								case 25:
-									level=2;
-									break;
-								case 50:
-									nivel=2;
-									//startSound(R.raw.sound5);
-									startSoundPool(5);
-									setTextFadeCenter("NIVEL "+nivel,getColorLevel(nivel));
-									break;
-								case 75:
-									level=3;
-									break;
-								case 100:
-									nivel=3;
-									//startSound(R.raw.sound5);
-									startSoundPool(5);
-									setTextFadeCenter("NIVEL "+nivel,getColorLevel(nivel));
-									break;
-								case 125:
-									level=4;
-									break;
-								case 150:
-									nivel=4;
-									//startSound(R.raw.sound5);
-									startSoundPool(5);
-									setTextFadeCenter("NIVEL "+nivel,getColorLevel(nivel));
-									break;
-								case 175:
-									level=5;
-									break;
-								case 200:
-									nivel=5;
-									//startSound(R.raw.sound5);
-									startSoundPool(5);
-									setTextFadeCenter("NIVEL "+nivel,getColorLevel(nivel));
-									break;
-									
+						if(isAfecte(block.x,block.y,block.w,block.h,fire.x,fire.y)){
+							fire.eliminar();
+							if(--block.life==0){
+
+								switch(++puntos){
+									case 25:
+										level=2;
+										break;
+									case 50:
+										nivel=2;
+										//startSound(R.raw.sound5);
+										startSoundPool(5);
+										setTextFadeCenter("NIVEL "+nivel,getColorLevel(nivel));
+										break;
+									case 75:
+										level=3;
+										break;
+									case 100:
+										nivel=3;
+										//startSound(R.raw.sound5);
+										startSoundPool(5);
+										setTextFadeCenter("NIVEL "+nivel,getColorLevel(nivel));
+										break;
+									case 125:
+										level=4;
+										break;
+									case 150:
+										nivel=4;
+										//startSound(R.raw.sound5);
+										startSoundPool(5);
+										setTextFadeCenter("NIVEL "+nivel,getColorLevel(nivel));
+										break;
+									case 175:
+										level=5;
+										break;
+									case 200:
+										nivel=5;
+										//startSound(R.raw.sound5);
+										startSoundPool(5);
+										setTextFadeCenter("NIVEL "+nivel,getColorLevel(nivel));
+										break;
+
+								}
+								block.eliminar();
+								list_explocion.add(new Explocion(fire.x,fire.y,basesize*25,Color.RED));
+								startSoundPool(6);
+
+								/*startSound(R.raw.sound5);*/
+								switch(getRandom(0,15)){
+									case 5:
+										itemSpeed.add(new ItemSpeed(fire.x,fire.y));
+										break;
+									case 1:
+										itemtriple.add(new ItemTriple(fire.x,fire.y));
+										break;
+									case 7:
+										list_nuclear.add(new ItemNuclear(fire.x,fire.y));
+										break;
+									case 11:
+										list_pluslife.add(new PlusLifeNave(fire.x,fire.y));
+										break;
+									case 12:
+										list_pluslife_muro.add(new PlusLifeMuro(fire.x,fire.y));
+								}
 							}
-							block.eliminar();
-							list_explocion.add(new Explocion(fire.x,fire.y,basesize*25,Color.RED));
-							startSoundPool(6);
-							
-							/*startSound(R.raw.sound5);*/
-							switch(getRandom(0,15)){
-								case 5:
-									itemSpeed.add(new ItemSpeed(fire.x,fire.y));
-									break;
-								case 1:
-									itemtriple.add(new ItemTriple(fire.x,fire.y));
-									break;
-								case 7:
-									list_nuclear.add(new ItemNuclear(fire.x,fire.y));
-									break;
-								case 11:
-									list_pluslife.add(new PlusLifeNave(fire.x,fire.y));
-									break;
-								case 12:
-									list_pluslife_muro.add(new PlusLifeMuro(fire.x,fire.y));
-							}
-						}
 						}
 					}
 				}
 			}
 		}
-		
+
 		for(PlusLifeNave pl :list_pluslife){
 			pl.move(canvas);
 			if(isClick(nave.x,nave.y,pl.x,pl.y,20*basesize)){
@@ -523,7 +557,7 @@ public class GameView extends View
 				textfades.add(new TextFade("LIFE "+nave.life,pl.x,pl.y,0xff00ff00));
 			}
 		}
-		
+
 		for(PlusLifeMuro plm :list_pluslife_muro){
 			plm.move(canvas);
 			if(isClick(nave.x,nave.y,plm.x,plm.y,20*basesize)){
@@ -532,12 +566,12 @@ public class GameView extends View
 				textfades.add(new TextFade("LIFE "+muro.life,plm.x,plm.y,0xff0000ff));
 			}
 		}
-		
+
 		for(Block block:blocks){
 			if(block.y>getHeight()-muro.height){
-				
+
 				if(--muro.life>=0){
-					
+
 					//startSound(R.raw.sound3);
 					startSoundPool(3);
 					if(muro.life==0){
@@ -546,53 +580,54 @@ public class GameView extends View
 						if(!nave.isEliminada()){
 							naveDestroy();
 						}
-						
+
 						isGameOver=true;
 					}
 				}
 				block.eliminar();
-				
-				
+
+
 			}
 		}
-		
+
 		for(Asteroide a :asteroides){
 			a.draw(canvas);
-			
+
 			for(Fire fire:fires){
 				if(!a.isEliminada()){
-				if(isClick(fire.x,fire.y,a.x,a.y,a.radio*basesize)){
-					fire.eliminar();
-					a.eliminar();
-					startSoundPool(7);
-					explocionList.add(new Explocion2(a.x,a.y));
-				}
+					if(isClick(fire.x,fire.y,a.x,a.y,a.radio)){
+						fire.eliminar();
+						a.eliminar();
+						startSoundPool(7);
+						explocionList.add(new Explocion2(a.x,a.y));
+					}
 				}
 			}
+			
 			if(!nave.isEliminada()){
-			if(isClick(nave.x,nave.y,a.x,a.y,(nave.bitmap.getHeight()/2))){
-				nave.life(-1);
-				explocionList.add(new Explocion2(a.x,a.y));
-				a.eliminar();
-				startSoundPool(1);
-				if(nave.life<=0){
-				naveDestroy();
-				toast("Tu nave fue destruida");
-				textfades.add(new TextFade("Tu nave explotó!!!",(float)getWidth()/2,(float)getHeight()/2,0xffff6000));
+				if(isClick(nave.x,nave.y,a.x,a.y,(nave.bitmap.getHeight()/2))){
+					nave.life(-1);
+					explocionList.add(new Explocion2(a.x,a.y));
+					a.eliminar();
+					startSoundPool(1);
+					if(nave.life<=0){
+						naveDestroy();
+						toast("Tu nave fue destruida");
+						textfades.add(new TextFade("Tu nave explotó!!!",(float)getWidth()/2,(float)getHeight()/2,0xffff6000));
+					}
 				}
-			}
 			}
 			if(a.y>getHeight()-muro.height){
 				explocionList.add(new Explocion2(a.x,a.y));
 				a.eliminar();
 			}
 		}
-		
+
 		for(Explocion2 exp :explocionList){
 			exp.draw(canvas);
 		}
-		
-		
+
+
 		for(ItemNuclear nuclear :list_nuclear){
 			nuclear.draw(canvas);
 			if(nuclear.y>getHeight() -muro.height){
@@ -606,7 +641,7 @@ public class GameView extends View
 				startSoundPool(4);
 				muro.paint.setColor(0xff101010);
 			}
-			
+
 			for(Fire fire:fires){
 				if((!fire.isEliminada())&&isClick(fire.x,fire.y,nuclear.x,nuclear.y,basesize*10)){
 					nuclear.eliminar();
@@ -619,7 +654,7 @@ public class GameView extends View
 						tmpfire.setColor(0xffffc000);
 						tmpfire.dx=i;
 						tmp_list_fire.add(tmpfire);
-						
+
 						tmpfire = new Fire(nuclear.x,nuclear.y);
 						tmpfire.setColor(0xffffc000);
 						tmpfire.dx=i;
@@ -632,69 +667,70 @@ public class GameView extends View
 		fires.addAll(tmp_list_fire);
 		tmp_list_fire.clear();
 		limpiar(
-		fires,
-		blocks,
-		itemSpeed,
-		textfades,
-		itemtriple,
-		asteroides,
-		explocionList,
-		list_explocion,
-		list_nuclear
+			fires,
+			blocks,
+			itemSpeed,
+			textfades,
+			itemtriple,
+			asteroides,
+			explocionList,
+			list_explocion,
+			list_nuclear,
+			list_alien1
 		);
-		
+
 		for(int i = 0;i<list_pluslife.size();i++){
 			PlusLifeNave pl = list_pluslife.get(i);
 			if(pl.consumido){
 				list_pluslife.remove(i);
 			}
 		}
-		
+
 		for(int i = 0;i<list_pluslife_muro.size();i++){
 			PlusLifeMuro pl = list_pluslife_muro.get(i);
 			if(pl.consumido){
 				list_pluslife_muro.remove(i);
 			}
 		}
-		
+
 		for(int i = 0;i<list_enemigo2.size();i++){
 			if(list_enemigo2.get(i).anulable){
 				list_enemigo2.remove(i);
 			}
 		}
-		
+
 		for(int i = 0;i<list_boss.size();i++){
 			if(list_boss.get(i).anulable){
 				list_boss.remove(i);
 			}
 		}
-		
+
 	}
-	
+
 	public void loadItem(){
 		if(listitem.size()>0){
 			String type = (String)listitem.get(0).getTag();
 			int duration = listitem.get(0).getDuration();
 			switch(type){
 				case "triple":
-					
+
 					break;
 			}
 		}
 	}
-	
+
 	void setTextFadeCenter(String text,int color){
 		textfades.add(new TextFade(text,rectf_game.centerX(),rectf_game.centerY(),color));
 	}
-	
-	
-	
+
+
+
 	boolean recordNow = true;
 	public void naveDestroy(){
-			
-			nave.eliminar();
-			explocionList.add(new Explocion2(nave.x,nave.y));
-		
+
+		nave.eliminar();
+		explocionList.add(new Explocion2(nave.x,nave.y));
+
 		if(recordNow){
 			if(record<puntos){
 				recordNow=false;
@@ -703,20 +739,20 @@ public class GameView extends View
 			}
 		}
 	}
-	
-	
+
+
 	public void limpiar(Object...object){
 		for(Object obj:object){
 			ArrayList<UnidadBase>ub=(ArrayList<UnidadBase>)obj;
-		for(int i = 0;i<ub.size();i++){
-			if(ub.get(i).isEliminada){
-				ub.remove(i);
+			for(int i = 0;i<ub.size();i++){
+				if(ub.get(i).isEliminada){
+					ub.remove(i);
+				}
 			}
 		}
-		}
 	}
-	
-	
+
+
 	private class Fire extends UnidadBase{
 		public float x,y;
 		private Paint paint, paint2, paint3;
@@ -726,31 +762,31 @@ public class GameView extends View
 		float dy = -1;
 		float animationTime = 0;
 		float trailLength = 0;
-		
+
 		Fire(float x,float y){
 			this.x=x;
 			this.y=y;
 			speed=speed*basesize;
-			
+
 			// Paint principal - núcleo del proyectil
 			paint = new Paint(Paint.ANTI_ALIAS_FLAG);
 			paint.setStyle(Paint.Style.FILL);
 			paint.setColor(0xff00ffff); // Cyan brillante
 			paint.setShadowLayer(6*basesize, 0, 0, 0xff0088ff);
-			
+
 			// Paint secundario - aura energética
 			paint2 = new Paint(Paint.ANTI_ALIAS_FLAG);
 			paint2.setStyle(Paint.Style.STROKE);
 			paint2.setStrokeWidth(n != null ? n.get(2) : 2);
 			paint2.setColor(0xffffff00); // Amarillo energético
 			paint2.setAlpha(180);
-			
+
 			// Paint para estela - efecto de trail
 			paint3 = new Paint(Paint.ANTI_ALIAS_FLAG);
 			paint3.setStyle(Paint.Style.FILL);
 			paint3.setColor(0xff0080ff); // Azul eléctrico
 		}
-		
+
 		void draw(Canvas canvas){
 			float mx,my;
 			if(dx==0){
@@ -758,19 +794,19 @@ public class GameView extends View
 			}else{
 				mx=dx*speed;
 			}
-			
+
 			if(dy==0){
 				my=0;
 			}else{
 				my=dy*speed;
 			}
-			
+
 			// Actualizar posición
 			x=x+mx;
 			y=y+my;
 			animationTime += 0.1f;
 			trailLength = Math.min(trailLength + 0.5f, n.n20);
-			
+
 			// Dibujar estela energética
 			for(int i = 0; i < 5; i++){
 				float trailProgress = i / 5f;
@@ -778,30 +814,30 @@ public class GameView extends View
 				float trailY = y - my * trailProgress * 3;
 				float trailSize = (basesize * 3) * (1 - trailProgress);
 				int alpha = 100 - (int)(trailProgress * 80);
-				
+
 				paint3.setAlpha(alpha);
 				canvas.drawCircle(trailX, trailY, trailSize, paint3);
 			}
 			paint3.setAlpha(255);
-			
+
 			// Dibujar anillos expansivos
 			for(int i = 0; i < 2; i++){
 				float ringProgress = (animationTime + i * 0.3f) % 1f;
 				float ringSize = (basesize * 2) + ringProgress * n.n10;
 				int ringAlpha = (int)((1 - ringProgress) * 150);
-				
+
 				paint2.setAlpha(ringAlpha);
 				canvas.drawCircle(x, y, ringSize, paint2);
 			}
 			paint2.setAlpha(180);
-			
+
 			// Dibujar núcleo principal con pulsación
 			float corePulse = (basesize * 4) + (float)Math.sin(animationTime * 4) * basesize;
 			canvas.drawCircle(x, y, corePulse, paint);
-			
+
 			// Dibujar centro brillante
 			canvas.drawCircle(x, y, basesize * 2, paint2);
-			
+
 			// Dibujar partículas de energía
 			for(int i = 0; i < 4; i++){
 				float angle = animationTime * 3 + (i * (float)Math.PI / 2);
@@ -810,7 +846,7 @@ public class GameView extends View
 				canvas.drawCircle(particleX, particleY, basesize, paint);
 			}
 		}
-		
+
 		void setColor(int color){
 			paint.setColor(color);
 			// Ajustar colores secundarios según el color principal
@@ -827,8 +863,8 @@ public class GameView extends View
 			}
 		}
 	}
-	
-	
+
+
 	// Esto es una copia de seguridad para unenemigo basico futuro
 	private class Alien1 extends UnidadBase{
 		int life = 5;
@@ -840,7 +876,7 @@ public class GameView extends View
 		float animationTime = 0;
 		float rotationAngle = 0;
 		float tentacleWave = 0;
-		
+
 		float var_5,var_10,var_15,var_20,var_1,var_2,var_3,var_8,var_12;
 		Alien1(float x,float y){
 			this.x=x;
@@ -848,38 +884,38 @@ public class GameView extends View
 			w=basesize*25;
 			h=basesize*25;
 			round=basesize*5;
-			
+
 			// Paint principal - cuerpo orgánico alienígena
 			paint = new Paint(Paint.ANTI_ALIAS_FLAG);
 			paint.setStyle(Paint.Style.FILL);
 			paint.setColor(0xff4a148c); // Púrpura oscuro alienígena
-			
+
 			// Paint secundario - venas y detalles biológicos
 			paint2 = new Paint(Paint.ANTI_ALIAS_FLAG);
 			paint2.setStyle(Paint.Style.STROKE);
 			paint2.setStrokeWidth(n != null ? n.get(2) : 2);
 			paint2.setColor(0xff9c27b0); // Púrpura brillante
 			paint2.setShadowLayer(4*basesize, 0, 0, 0xff6a1b9a);
-			
+
 			// Paint para núcleo biológico
 			paint3 = new Paint(Paint.ANTI_ALIAS_FLAG);
 			paint3.setStyle(Paint.Style.FILL);
 			paint3.setColor(0xff00e676); // Verde bioluminiscente
 			paint3.setShadowLayer(8*basesize, 0, 0, 0xff00c853);
-			
+
 			// Paint para tentáculos
 			paint4 = new Paint(Paint.ANTI_ALIAS_FLAG);
 			paint4.setStyle(Paint.Style.STROKE);
 			paint4.setStrokeWidth(n != null ? n.get(3) : 3);
 			paint4.setColor(0xff7b1fa2); // Púrpura medio
 			paint4.setShadowLayer(3*basesize, 0, 0, 0xff4a148c);
-			
+
 			// Paint para ojos sensores
 			paint5 = new Paint(Paint.ANTI_ALIAS_FLAG);
 			paint5.setStyle(Paint.Style.FILL);
 			paint5.setColor(0xffff00ff); // Magenta brillante
 			paint5.setShadowLayer(5*basesize, 0, 0, 0xff000000);
-			
+
 			var_1=basesize*1;
 			var_2=basesize*2;
 			var_3=basesize*3;
@@ -895,7 +931,7 @@ public class GameView extends View
 			animationTime += 0.05f;
 			rotationAngle += 0.02f;
 			tentacleWave += 0.03f;
-			
+
 			// Actualizar color según vida - tonos biológicos
 			int[] colors = {
 				0xff4a148c, // Púrpura oscuro (vida 5)
@@ -905,14 +941,14 @@ public class GameView extends View
 				0xff9c27b0  // Púrpura brillante (vida 1)
 			};
 			paint.setColor(life > 0 && life <= colors.length ? colors[life-1] : colors[0]);
-			
+
 			y=y+speed*basesize;
-			
+
 			// Dibujar cuerpo principal alienígena (forma orgánica)
 			Path alienBody = new Path();
 			float centerX = x + w/2;
 			float centerY = y + h/2;
-			
+
 			// Forma ovalada alienígena con ondulaciones
 			alienBody.moveTo(centerX - var_12, centerY - var_15);
 			alienBody.quadTo(centerX - var_20, centerY, centerX - var_12, centerY + var_15);
@@ -920,30 +956,30 @@ public class GameView extends View
 			alienBody.quadTo(centerX + var_20, centerY, centerX + var_12, centerY - var_15);
 			alienBody.quadTo(centerX, centerY - var_20, centerX - var_12, centerY - var_15);
 			alienBody.close();
-			
+
 			canvas.drawPath(alienBody, paint);
 			canvas.drawPath(alienBody, paint2);
-			
+
 			// Dibujar tentáculos moviéndose
 			for(int i = 0; i < 6; i++){
 				float tentacleAngle = (i * (float)Math.PI / 3) + tentacleWave;
 				float tentacleLength = var_15 + (float)Math.sin(tentacleWave * 2 + i) * var_3;
-				
+
 				float startX = centerX + (float)Math.cos(tentacleAngle) * var_8;
 				float startY = centerY + (float)Math.sin(tentacleAngle) * var_8;
-				
+
 				float endX = centerX + (float)Math.cos(tentacleAngle) * tentacleLength;
 				float endY = centerY + (float)Math.sin(tentacleAngle) * tentacleLength;
-				
+
 				// Tentáculo curvo
 				Path tentacle = new Path();
 				tentacle.moveTo(startX, startY);
 				float controlX = centerX + (float)Math.cos(tentacleAngle + 0.3f) * (tentacleLength * 0.6f);
 				float controlY = centerY + (float)Math.sin(tentacleAngle + 0.3f) * (tentacleLength * 0.6f);
 				tentacle.quadTo(controlX, controlY, endX, endY);
-				
+
 				canvas.drawPath(tentacle, paint4);
-				
+
 				// Ventas en tentáculos
 				for(int j = 0; j < 3; j++){
 					float veinProgress = j / 3f;
@@ -952,24 +988,24 @@ public class GameView extends View
 					canvas.drawCircle(veinX, veinY, var_1, paint3);
 				}
 			}
-			
+
 			// Dibujar núcleo biológico pulsante
 			float corePulse = var_5 + (float)Math.sin(animationTime * 3) * var_2;
 			canvas.drawCircle(centerX, centerY, corePulse, paint3);
 			canvas.drawCircle(centerX, centerY, var_3, paint2);
-			
+
 			// Dibujar ojos sensores alienígenas
 			for(int i = 0; i < 3; i++){
 				float eyeAngle = rotationAngle + (i * (float)Math.PI * 2 / 3);
 				float eyeDistance = var_10;
 				float eyeX = centerX + (float)Math.cos(eyeAngle) * eyeDistance;
 				float eyeY = centerY + (float)Math.sin(eyeAngle) * eyeDistance;
-				
+
 				// Ojo con parpadeo
 				float eyeSize = var_3 + (float)Math.sin(animationTime * 6 + i) * var_1;
 				canvas.drawCircle(eyeX, eyeY, eyeSize, paint5);
 				canvas.drawCircle(eyeX, eyeY, var_1, paint3);
-				
+
 				// Conexión neuronal al centro
 				Path neuralPath = new Path();
 				neuralPath.moveTo(centerX, centerY);
@@ -980,21 +1016,21 @@ public class GameView extends View
 				);
 				canvas.drawPath(neuralPath, paint2);
 			}
-			
+
 			// Dibujar simetría biológica - patrones orgánicos
 			for(int i = 0; i < 8; i++){
 				float patternAngle = (i * (float)Math.PI / 4) + rotationAngle;
 				float patternRadius = var_12;
 				float px = centerX + (float)Math.cos(patternAngle) * patternRadius;
 				float py = centerY + (float)Math.sin(patternAngle) * patternRadius;
-				
+
 				// Puntos bioluminiscentes
 				float glowSize = var_1 + (float)Math.sin(animationTime * 4 + i) * var_1;
 				paint3.setAlpha(150 + (int)((float)Math.sin(animationTime * 3 + i) * 100));
 				canvas.drawCircle(px, py, glowSize, paint3);
 			}
 			paint3.setAlpha(255);
-			
+
 			// Indicadores de vida - glóbulos biológicos
 			for(int i = 0; i < life; i++){
 				float indicatorX = x + var_5 + (i * var_3);
@@ -1006,9 +1042,9 @@ public class GameView extends View
 		}
 	}
 
-	
+
 	// Enemigos básicos del juego - Versión optimizada
-	private class Block extends UnidadBase{
+	private class fire2 extends UnidadBase{
 		int life = 5;
 		public float x,y;
 		private Paint paint, paint2, paint3;
@@ -1016,31 +1052,31 @@ public class GameView extends View
 		float w,h;
 		float round;
 		float animationTime = 0;
-		
+
 		float var_5,var_10,var_15,var_20,var_1,var_2,var_3;
-		Block(float x,float y){
+		fire2(float x,float y){
 			this.x=x;
 			this.y=y;
 			w=basesize*25;
 			h=basesize*25;
 			round=basesize*5;
-			
+
 			// Paint principal - cuerpo simplificado
 			paint = new Paint(Paint.ANTI_ALIAS_FLAG);
 			paint.setStyle(Paint.Style.FILL);
 			paint.setColor(0xff4a148c);
-			
+
 			// Paint secundario - bordes
 			paint2 = new Paint(Paint.ANTI_ALIAS_FLAG);
 			paint2.setStyle(Paint.Style.STROKE);
 			paint2.setStrokeWidth(2);
 			paint2.setColor(0xff9c27b0);
-			
+
 			// Paint para núcleo
 			paint3 = new Paint(Paint.ANTI_ALIAS_FLAG);
 			paint3.setStyle(Paint.Style.FILL);
 			paint3.setColor(0xff00e676);
-			
+
 			var_1=basesize*1;
 			var_2=basesize*2;
 			var_3=basesize*3;
@@ -1052,22 +1088,22 @@ public class GameView extends View
 
 		public void start(Canvas canvas){
 			animationTime += 0.05f;
-			
+
 			// Simplificar actualización de color
 			int[] colors = {0xff4a148c, 0xff6a1b9a, 0xff7b1fa2, 0xff8e24aa, 0xff9c27b0};
 			paint.setColor(life > 0 && life <= colors.length ? colors[life-1] : colors[0]);
-			
+
 			y=y+speed*basesize;
-			
+
 			// Cuerpo simple - ovalado
 			RectF body = new RectF(x+var_5, y+var_5, x+w-var_5, y+h-var_5);
 			canvas.drawOval(body, paint);
 			canvas.drawOval(body, paint2);
-			
+
 			// Núcleo simple
 			float corePulse = var_5 + (float)Math.sin(animationTime * 3) * var_2;
 			canvas.drawCircle(x + w/2, y + h/2, corePulse, paint3);
-			
+
 			// Indicadores simples
 			for(int i = 0; i < life; i++){
 				float indicatorX = x + var_5 + (i * var_3);
@@ -1076,17 +1112,61 @@ public class GameView extends View
 			}
 		}
 	}
+
+	
+	private class Block extends UnidadBase{
+		int life = 5;
+		public float x,y;
+		private Paint paint;
+		Paint paint2;
+		float speed=1;
+		float w,h;
+		float round;
+
+		float var_5,var_10;
+		Block(float x,float y){
+			this.x=x;
+			this.y=y;
+			w=basesize*25;
+			h=basesize*25;
+			round=basesize*5;
+			paint=new Paint(Paint.ANTI_ALIAS_FLAG);
+			paint.setColor(Color.RED);
+
+			paint2=new Paint(Paint.ANTI_ALIAS_FLAG);
+			paint2.setColor(0x90202020);
+
+			var_5=basesize*5;
+			var_10=basesize*10;
+		}
+
+		public void start(Canvas canvas){
+
+			paint.setColor(getColorLevel(life>0?life-1:0));
+			y=y+speed;
+			RectF rectf = new RectF(x,y,x+w,y+h);
+			RectF rectf1 = new RectF(x+var_5,y+var_5,x+var_10,y+var_10);
+			RectF rectf2 = new RectF(x+w-var_10,y+var_5,x+w-var_5,y+var_10);
+			RectF rectf3 = new RectF(x+var_5,y+h-var_10,x+w-var_5,y+h-var_5);
+
+			canvas.drawRoundRect(rectf,round,round,paint);
+			canvas.drawRect(rectf1,paint2);
+			canvas.drawRect(rectf2,paint2);
+			canvas.drawRect(rectf3,paint2);
+		}
+	}
 	
 	
+
 	public static float getDip(Context _context, int _input) {
 		return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, _input, _context.getResources().getDisplayMetrics());
 	}
-	
+
 	public static int getRandom(int _min, int _max) {
 		Random random = new Random();
 		return random.nextInt(_max - _min + 1) + _min;
 	}
-	
+
 	public class Nave extends UnidadBase{
 		float x = 0,y=0;
 		int speedAtak = 25;
@@ -1095,60 +1175,60 @@ public class GameView extends View
 		Bitmap bitmap;
 		float animationTime = 0;
 		float engineGlow = 0;
-		
+
 		Nave(){
 			paint= new Paint(Paint.ANTI_ALIAS_FLAG);
 			paint.setColor(0xff0080ff); // Azul brillante
 			paint.setStyle(Paint.Style.FILL);
-			
+
 			// Paint para detalles y bordes
 			paint2 = new Paint(Paint.ANTI_ALIAS_FLAG);
 			paint2.setColor(0xff00ffff); // Cyan brillante
 			paint2.setStyle(Paint.Style.STROKE);
 			paint2.setStrokeWidth(n != null ? n.get(2) : 2);
-			
+
 			// Paint para motores
 			paint3 = new Paint(Paint.ANTI_ALIAS_FLAG);
 			paint3.setColor(0xffff6600); // Naranja brillante
 			paint3.setStyle(Paint.Style.FILL);
 			paint3.setShadowLayer(8*basesize, 0, 0, 0xffff0000);
-			
+
 			// Paint para cabina
 			paint4 = new Paint(Paint.ANTI_ALIAS_FLAG);
 			paint4.setColor(0xffffff00); // Amarillo brillante
 			paint4.setStyle(Paint.Style.FILL);
 			paint4.setAlpha(200);
-			
+
 			// Paint para escudo/deflectores
 			paint5 = new Paint(Paint.ANTI_ALIAS_FLAG);
 			paint5.setColor(0xff00ff00); // Verde brillante
 			paint5.setStyle(Paint.Style.STROKE);
 			paint5.setStrokeWidth(n != null ? n.get(1) : 1);
-			
+
 			bitmap=BitmapFactory.decodeResource(getResources(),R.drawable.nave_small);
 		}
-		
+
 		public void draw(Canvas canvas,float x,float y){
 			this.x=x;
 			this.y=y;
 			drawBitmapCenter(canvas,bitmap,basesize,x,y,paint);
 		}
-		
+
 		public void draw2(Canvas canvas,float x,float y){
 			this.x=x;
 			this.y=y;
 			animationTime += 0.03f;
 			engineGlow = 0.5f + (float)Math.sin(animationTime * 4) * 0.5f;
-			
+
 			// Dibujar escudo energético
 			int shieldAlpha = 100 + (int)((float)Math.sin(animationTime * 2) * 50);
 			paint5.setAlpha(shieldAlpha);
 			canvas.drawCircle(x, y, n.n30, paint5);
 			paint5.setAlpha(255);
-			
+
 			// Dibujar cuerpo principal - nave espacial mejorada
 			Path shipBody = new Path();
-			
+
 			// Fuselaje principal
 			shipBody.moveTo(x, y - n.n20);
 			shipBody.lineTo(x - n.n8, y - n.n10);
@@ -1161,53 +1241,53 @@ public class GameView extends View
 			shipBody.lineTo(x + n.n15, y);
 			shipBody.lineTo(x + n.n8, y - n.n10);
 			shipBody.close();
-			
+
 			// Aplicar color según nivel de vida
 			//paint.setColor(getColorLevel(life-1));
 			paint.setColor(0xffff0000);
 			canvas.drawPath(shipBody, paint);
 			canvas.drawPath(shipBody, paint2);
-			
+
 			// Dibujar cabina
 			canvas.drawCircle(x, y - n.n5, n.n4, paint4);
 			canvas.drawCircle(x, y - n.n5, n.n2, paint);
-			
+
 			// Dibujar motores con efecto de pulsación
 			float engineSize = n.n3 * (1 + engineGlow * 0.3f);
-			
+
 			// Motor izquierdo
 			canvas.drawCircle(x - n.n8, y + n.n20, engineSize, paint3);
 			canvas.drawCircle(x - n.n8, y + n.n20, n.n2, paint);
-			
+
 			// Motor derecho
 			canvas.drawCircle(x + n.n8, y + n.n20, engineSize, paint3);
 			canvas.drawCircle(x + n.n8, y + n.n20, n.n2, paint);
-			
+
 			// Motor central
 			canvas.drawCircle(x, y + n.n20 - n.n2, engineSize * 0.8f, paint3);
 			canvas.drawCircle(x, y + n.n20 - n.n2, n.n2, paint);
-			
+
 			// Dibujar llamas de los motores
 			for(int i = 0; i < 3; i++){
 				float flameOffset = (float)Math.sin(animationTime * 8 + i * 2) * n.n2;
 				float flameX = x + (i - 1) * n.n8;
 				float flameY = y + n.n25 + flameOffset;
-				
+
 				Path flame = new Path();
 				flame.moveTo(flameX - n.n1, flameY);
 				flame.lineTo(flameX, flameY + n.n8 + engineGlow * n.n4);
 				flame.lineTo(flameX + n.n1, flameY);
 				flame.close();
-				
+
 				paint3.setAlpha(150 + (int)(engineGlow * 100));
 				canvas.drawPath(flame, paint3);
 				paint3.setAlpha(255);
 			}
-			
+
 			// Dibujar armas laterales
 			canvas.drawRect(x - n.n20, y - n.n2, x - n.n15, y + n.n2, paint2);
 			canvas.drawRect(x + n.n15, y - n.n2, x + n.n20, y + n.n2, paint2);
-			
+
 			// Dibujar puntos de energía giratorios
 			for(int i = 0; i < 6; i++){
 				float angle = -animationTime + (i * (float)Math.PI / 3);
@@ -1215,36 +1295,36 @@ public class GameView extends View
 				float py = y + (float)Math.sin(angle) * n.n12;
 				canvas.drawCircle(px, py, n.n1, paint4);
 			}
-			
+
 			// Dibujar sensores frontales
 			canvas.drawCircle(x - n.n5, y - n.n12, n.n1, paint2);
 			canvas.drawCircle(x + n.n5, y - n.n12, n.n1, paint2);
 		}
-		
+
 		public void life(int l){
 			life=life+l;
 			if(life>0){
 				paint.setColor(getColorLevel(life-1));
 			}
 		}
-		
+
 		public Fire fire(){
 			return new Fire(x,y);
 		}
 	}
-	
+
 	public static class UnidadBase{
 		private boolean isEliminada=false;
-		
+
 		public boolean isEliminada(){
 			return isEliminada;
 		}
-		
+
 		public void eliminar(){
 			isEliminada=true;
 		}
 	}
-	
+
 	public class ItemTriple extends Item {
 		float x,y;
 		Paint paint1, paint2, paint3, paint4;
@@ -1256,31 +1336,31 @@ public class GameView extends View
 			setTag("triple");
 			this.x=x;
 			this.y=y;
-			
+
 			// Paint principal - hexágono exterior
 			paint1 = new Paint(Paint.ANTI_ALIAS_FLAG);
 			paint1.setStyle(Paint.Style.STROKE);
 			paint1.setStrokeWidth(n != null ? n.get(3) : 3);
 			paint1.setColor(0xff00ffff); // Cyan brillante
 			paint1.setShadowLayer(8*basesize, 0, 0, 0xff0088ff);
-			
+
 			// Paint secundario - núcleo energético
 			paint2 = new Paint(Paint.ANTI_ALIAS_FLAG);
 			paint2.setStyle(Paint.Style.FILL);
 			paint2.setColor(0xff0080ff); // Azul eléctrico
-			
+
 			// Paint para proyectiles
 			paint3 = new Paint(Paint.ANTI_ALIAS_FLAG);
 			paint3.setStyle(Paint.Style.FILL);
 			paint3.setColor(0xffff6600); // Naranja energético
 			paint3.setShadowLayer(5*basesize, 0, 0, 0xffff0000);
-			
+
 			// Paint para detalles
 			paint4 = new Paint(Paint.ANTI_ALIAS_FLAG);
 			paint4.setStyle(Paint.Style.STROKE);
 			paint4.setStrokeWidth(n != null ? n.get(1) : 1);
 			paint4.setColor(0xffffff00); // Amarillo brillante
-			
+
 			v1=basesize*1;
 			v2=basesize*2;
 			v3=basesize*3;
@@ -1299,12 +1379,12 @@ public class GameView extends View
 			y=y+basesize*2;
 			giro += 0.03f;
 			animationTime += 0.05f;
-			
+
 			// Dibujar hexágono exterior rotante
 			canvas.save();
 			canvas.translate(x, y);
 			canvas.rotate(giro * 180 / (float)Math.PI);
-			
+
 			Path hexagon = new Path();
 			for(int i = 0; i < 6; i++){
 				float angle = i * (float)Math.PI / 3;
@@ -1317,31 +1397,31 @@ public class GameView extends View
 				}
 			}
 			hexagon.close();
-			
+
 			canvas.drawPath(hexagon, paint1);
 			canvas.restore();
-			
+
 			// Dibujar núcleo central pulsante
 			float corePulse = v8 + (float)Math.sin(animationTime * 3) * v2;
 			canvas.drawCircle(x, y, corePulse, paint2);
 			canvas.drawCircle(x, y, v4, paint4);
-			
+
 			// Dibujar tres proyectiles en formación triangular
 			for(int i = 0; i < 3; i++){
 				float angle = -giro + (i * (float)Math.PI * 2 / 3);
 				float orbitRadius = v12;
 				float px = x + (float)Math.cos(angle) * orbitRadius;
 				float py = y + (float)Math.sin(angle) * orbitRadius;
-				
+
 				// Proyectil con efecto de energía
 				float projectileSize = v4 + (float)Math.sin(animationTime * 8 + i) * v1;
 				canvas.drawCircle(px, py, projectileSize, paint3);
 				canvas.drawCircle(px, py, v2, paint2);
-				
+
 				// Línea de energía hacia el centro
 				canvas.drawLine(x, y, px, py, paint4);
 			}
-			
+
 			// Dibujar anillos energéticos concéntricos
 			for(int i = 0; i < 3; i++){
 				float ringRadius = v15 + i * v3;
@@ -1350,7 +1430,7 @@ public class GameView extends View
 				canvas.drawCircle(x, y, ringRadius, paint1);
 			}
 			paint1.setAlpha(255);
-			
+
 			// Dibujar partículas de energía
 			for(int i = 0; i < 8; i++){
 				float angle = animationTime * 2 + (i * (float)Math.PI / 4);
@@ -1360,7 +1440,7 @@ public class GameView extends View
 			}
 		}
 	}
-	
+
 	public class ItemSpeed extends UnidadBase {
 		float x,y;
 		Paint paint1, paint2, paint3;
@@ -1369,25 +1449,25 @@ public class GameView extends View
 		ItemSpeed(float x,float y){
 			this.x=x;
 			this.y=y;
-			
+
 			// Paint principal - flechas de velocidad
 			paint1 = new Paint(Paint.ANTI_ALIAS_FLAG);
 			paint1.setStyle(Paint.Style.FILL);
 			paint1.setColor(0xff00ffff);
 			paint1.setShadowLayer(8*basesize, 0, 0, 0xff00ffff);
-			
+
 			// Paint secundario - contorno brillante
 			paint2 = new Paint(Paint.ANTI_ALIAS_FLAG);
 			paint2.setStyle(Paint.Style.STROKE);
 			paint2.setStrokeWidth(basesize*2);
 			paint2.setColor(0xff0088ff);
-			
+
 			// Paint central - núcleo energético
 			paint3 = new Paint(Paint.ANTI_ALIAS_FLAG);
 			paint3.setStyle(Paint.Style.FILL);
 			paint3.setColor(0xffffffff);
 			paint3.setAlpha(200);
-			
+
 			v2=basesize*2;
 			v5=basesize*5;
 			v8=basesize*8;
@@ -1395,23 +1475,23 @@ public class GameView extends View
 			v15=basesize*15;
 			v20=basesize*20;
 		}
-		
+
 		public void draw(Canvas canvas){
 			y=y+2;
 			rotation += 0.1f;
-			
+
 			canvas.save();
 			canvas.translate(x, y);
 			canvas.rotate(rotation * 180 / (float)Math.PI);
-			
+
 			// Dibujar núcleo central brillante
 			canvas.drawCircle(0, 0, v8, paint3);
-			
+
 			// Dibujar flechas de velocidad en 4 direcciones
 			for(int i = 0; i < 4; i++){
 				canvas.save();
 				canvas.rotate(i * 90);
-				
+
 				// Flecha principal
 				Path arrow = new Path();
 				arrow.moveTo(0, -v20);
@@ -1422,26 +1502,26 @@ public class GameView extends View
 				arrow.lineTo(v2, -v10);
 				arrow.lineTo(v5, -v10);
 				arrow.close();
-				
+
 				canvas.drawPath(arrow, paint1);
 				canvas.drawPath(arrow, paint2);
 				canvas.restore();
 			}
-			
+
 			// Dibujar anillo exterior pulsante
 			float pulse = v15 + (float)Math.sin(rotation * 3) * 3;
 			canvas.drawCircle(0, 0, pulse, paint2);
-			
+
 			canvas.restore();
 		}
 	}
-	
+
 	public static boolean isClick(float X,float Y,float x,float y,float radio){
 		float rx = X-x;
 		float ry = Y-y;
 		return java.lang.Math.hypot(rx,ry)<=radio;
 	}
-	
+
 	public class TextFade extends UnidadBase{
 		String texto;
 		float x,y;
@@ -1459,7 +1539,7 @@ public class GameView extends View
 			paint.setTypeface(paintText.getTypeface());
 			paint.setTextSize(basesize*20);
 		}
-		
+
 		public void draw(Canvas canvas){
 			fade = fade-2.5f;
 			paint.setAlpha((int)fade);
@@ -1470,7 +1550,7 @@ public class GameView extends View
 			}
 		}
 	}
-	
+
 	public static int getColorLevel(int index){
 		int[]colors={
 			0xffff0000,
@@ -1485,37 +1565,37 @@ public class GameView extends View
 		}
 		return colors[index];
 	}
-	
+
 	public float getNivelSpeed(){
 		float n[]={1,1.5f,3,4,5,5.5f,6.5f,7};
 		return n[nivel];
 	}
-	
+
 	/*
-	public class Enemigo extends UnidadBase{
-		float x=0,y=0;
-		float x1=1,y1=0.30f;
-		float speed = 2;
-		
-		void draw(Canvas canvas){
-			float w = getWidth();
-			float h = getHeight();
-			float var_5=basesize*5;
-			if(x>w||x<0){
-				x1=-x1;
-			}
-			
-			if(y>h||y<0){
-				y1=-y1;
-			}
-			x=x+(x1*speed);
-			y=y+(y1*speed);
-			
-			canvas.drawCircle(x,y,var_5,paintText);
-		}
-		
-	}*/
-	
+	 public class Enemigo extends UnidadBase{
+	 float x=0,y=0;
+	 float x1=1,y1=0.30f;
+	 float speed = 2;
+
+	 void draw(Canvas canvas){
+	 float w = getWidth();
+	 float h = getHeight();
+	 float var_5=basesize*5;
+	 if(x>w||x<0){
+	 x1=-x1;
+	 }
+
+	 if(y>h||y<0){
+	 y1=-y1;
+	 }
+	 x=x+(x1*speed);
+	 y=y+(y1*speed);
+
+	 canvas.drawCircle(x,y,var_5,paintText);
+	 }
+
+	 }*/
+
 	public class Muro extends UnidadBase{
 		Paint paint;
 		Paint paint1;
@@ -1528,22 +1608,22 @@ public class GameView extends View
 			paint1=new Paint(Paint.ANTI_ALIAS_FLAG);
 			paint1.setColor(0xf0ffffff);
 			height=basesize*32;
-			
+
 		}
 		void draw(Canvas canvas){
 			float w = getWidth();
 			float h = getHeight();
-			
+
 			float var_16 = basesize*16;
 			float var_32 = basesize*32;
 			float var_8=basesize*8;
-			
+
 			RectF rectf = new RectF(0,h-var_32,w,h);
 			canvas.drawRect(rectf,paint);
 			canvas.drawLine(0,h-var_32,w,h-var_32,paint1);
 			canvas.drawLine(0,h-var_16,w,h-var_16,paint1);
 			canvas.drawLine(0,h,w,h,paint1);
-			
+
 			if(++interval==1000){
 				interval=0;
 			}
@@ -1553,25 +1633,25 @@ public class GameView extends View
 			for(float i = 0;i<getWidth()+var_16;i=i+var_16){
 				canvas.drawLine(i,h-var_16,i,h,paint1);
 				canvas.drawLine(i-var_8,h-var_32,i-var_8,h-var_16,paint1);
-				
+
 				if(interval==500){
 					if(isEliminada()){return;}
 					Fire fire = new Fire(i,getHeight());
 					fire.paint.setColor(paint.getColor());
 					fires.add(fire);
-					
-					
+
+
 				}
 			}
-			
-			
+
+
 		}
 	}
-	
+
 	public static Paint newPaint(){
 		return new Paint(Paint.ANTI_ALIAS_FLAG);
 	}
-	
+
 	public class Asteroide extends UnidadBase{
 		float x,y;
 		Bitmap bitmap;
@@ -1584,33 +1664,33 @@ public class GameView extends View
 			this.y=y;
 			bitmap=getBitmapRotate(BitmapFactory.decodeResource(getResources(),R.drawable.fire),180);
 			paint=new Paint(Paint.ANTI_ALIAS_FLAG);
-			
+
 			w = bitmap.getWidth();
 			h = bitmap.getHeight();
 			radio = Math.max(w,h)/2;
 			speed=speed*basesize;
-			
+
 		}
-		
+
 		void draw(Canvas canvas){
 			y=y+speed;
-			
-			
+
+
 			canvas.drawBitmap(bitmap,x-(w/2),y-(h/2),paint);
 		}
 	}
-	
+
 	public static Bitmap getBitmapRotate(final Bitmap src,float angle){
 		Matrix matrix = new Matrix();
 		matrix.postRotate(angle);
 		Bitmap bitmap = Bitmap.createBitmap(src, 0, 0, src.getWidth(), src.getHeight(), matrix, true);
-		
+
 		return bitmap;
 	}
-	
-	
-	
-	
+
+
+
+
 	public  class Explocion2 extends UnidadBase{
 		float x,y;
 		ImageFrame img;
@@ -1633,8 +1713,8 @@ public class GameView extends View
 		}
 	}
 
-	
-	
+
+
 	public static class ImageFrame{
 		Bitmap image;
 		float x,y;
@@ -1683,40 +1763,40 @@ public class GameView extends View
 
 		}
 	}
-	
-	
+
+
 	public static boolean isAfecte(float x,float y,float w,float h, float X,float Y){
 		return X>x&&Y>y&&X<x+w&&Y<y+h;
 	}
-	
-	
+
+
 	public class Item extends UnidadBase{
 		int duration;
 		Object tag;
 		public Item(int duration){
 			this.duration=duration;
 		}
-		
+
 		public void setDuration(int ms){
 			duration=ms;
 		}
-		
+
 		public int getDuration(){
 			return duration;
 		}
-		
+
 		public void setTag(Object tag){
 			this.tag=tag;
 		}
-		
+
 		public Object getTag(){
 			return tag;
 		}
 	}
-	
+
 	void setMultifire(){
 		++multiatak;
-			getHandler().postDelayed(new Runnable(){
+		getHandler().postDelayed(new Runnable(){
 				@Override
 				public void run()
 				{
@@ -1724,319 +1804,319 @@ public class GameView extends View
 				}
 			},5000);
 	}
-	
+
 	public void toast(String str){
 		Toast.makeText(getContext(),str,Toast.LENGTH_LONG).show();
 	}
-	
+
 	public static class Explocion extends UnidadBase{
-			float x,y,radio;
-			int color;
-			Paint paint;
-			public Explocion(float x,float y,float radio,int color){
-				this.x=x;
-				this.y=y;
-				this.radio=radio;
-				this.color=color;
-				paint=new Paint(Paint.ANTI_ALIAS_FLAG);
-				paint.setColor(color);
-			}
-			float frames = 100;
-			public void draw(Canvas canvas){
-				paint.setAlpha((int)(255.0f*(frames/100)));
-				canvas.drawCircle(x,y,radio-(radio*(frames/100)),paint);
-				frames=frames-5;
-				if(frames<=0){
-					eliminar();
-				}
+		float x,y,radio;
+		int color;
+		Paint paint;
+		public Explocion(float x,float y,float radio,int color){
+			this.x=x;
+			this.y=y;
+			this.radio=radio;
+			this.color=color;
+			paint=new Paint(Paint.ANTI_ALIAS_FLAG);
+			paint.setColor(color);
+		}
+		float frames = 100;
+		public void draw(Canvas canvas){
+			paint.setAlpha((int)(255.0f*(frames/100)));
+			canvas.drawCircle(x,y,radio-(radio*(frames/100)),paint);
+			frames=frames-5;
+			if(frames<=0){
+				eliminar();
 			}
 		}
-		
-		public class Base extends UnidadBase{
-			float x,y;
-			Base(float x,float y){
-				this.x=x;
-				this.y=y;
-			}
+	}
+
+	public class Base extends UnidadBase{
+		float x,y;
+		Base(float x,float y){
+			this.x=x;
+			this.y=y;
 		}
-		
-		public class ItemNuclear extends Base{
-			Bitmap bitmap;
-			Paint paint;
-			public ItemNuclear(float x,float y){
-				super(x,y);
-				bitmap=BitmapFactory.decodeResource(getResources(),R.drawable.nuclear);
-				paint=new Paint(Paint.ANTI_ALIAS_FLAG);
-				
-			}
-			
-			public void draw(Canvas canvas){
-				
-				drawBitmapCenter(canvas,bitmap,basesize,x,++y,paint);
-			}
+	}
+
+	public class ItemNuclear extends Base{
+		Bitmap bitmap;
+		Paint paint;
+		public ItemNuclear(float x,float y){
+			super(x,y);
+			bitmap=BitmapFactory.decodeResource(getResources(),R.drawable.nuclear);
+			paint=new Paint(Paint.ANTI_ALIAS_FLAG);
+
 		}
-		
-		public static void drawBitmapCenter(Canvas canvas,Bitmap bitmap,float basesize,float x,float y,Paint paint){
-			float w=bitmap.getWidth()*basesize;
-			float h=bitmap.getHeight()*basesize;
-			float px = x-(w/2);
-			float py = y-(h/2);
-			canvas.drawBitmap(bitmap,px,py,paint);
+
+		public void draw(Canvas canvas){
+
+			drawBitmapCenter(canvas,bitmap,basesize,x,++y,paint);
 		}
-		
-		private SoundPool soundpool;
-		private Map <Integer,Integer> map_sound = new HashMap<>();
-		private void createSoundPool(){
-			if(Build.VERSION.SDK_INT > 21){
-				SoundPool.Builder builder = new SoundPool.Builder();
-				// El número de audio entrante
-				builder.setMaxStreams(5);
-				// AudioAttributes es un método para encapsular varios atributos de audio
-				AudioAttributes.Builder attrBuilder = new AudioAttributes.Builder();
-				// Establecer los atributos apropiados de la secuencia de audio
-				attrBuilder.setLegacyStreamType(AudioManager.STREAM_SYSTEM);//STREAM_MUSIC
-				// Cargar un AudioAttributes
-				builder.setAudioAttributes(attrBuilder.build());
-				soundpool = builder.build();
-			}else{
-				soundpool = new SoundPool(10, AudioManager.STREAM_MUSIC, 0);
-			}
-			
-			map_sound.put(1,soundpool.load(getContext(),R.raw.sound1,1));
-			map_sound.put(2,soundpool.load(getContext(),R.raw.sound2,1));
-			map_sound.put(3,soundpool.load(getContext(),R.raw.sound3,1));
-			map_sound.put(4,soundpool.load(getContext(),R.raw.sound4,1));
-			map_sound.put(5,soundpool.load(getContext(),R.raw.sound5,1));
-			map_sound.put(6,soundpool.load(getContext(),R.raw.sound6,1));
-			map_sound.put(7,soundpool.load(getContext(),R.raw.sound7,1));
-			
-			
+	}
+
+	public static void drawBitmapCenter(Canvas canvas,Bitmap bitmap,float basesize,float x,float y,Paint paint){
+		float w=bitmap.getWidth()*basesize;
+		float h=bitmap.getHeight()*basesize;
+		float px = x-(w/2);
+		float py = y-(h/2);
+		canvas.drawBitmap(bitmap,px,py,paint);
+	}
+
+	private SoundPool soundpool;
+	private Map <Integer,Integer> map_sound = new HashMap<>();
+	private void createSoundPool(){
+		if(Build.VERSION.SDK_INT > 21){
+			SoundPool.Builder builder = new SoundPool.Builder();
+			// El número de audio entrante
+			builder.setMaxStreams(5);
+			// AudioAttributes es un método para encapsular varios atributos de audio
+			AudioAttributes.Builder attrBuilder = new AudioAttributes.Builder();
+			// Establecer los atributos apropiados de la secuencia de audio
+			attrBuilder.setLegacyStreamType(AudioManager.STREAM_SYSTEM);//STREAM_MUSIC
+			// Cargar un AudioAttributes
+			builder.setAudioAttributes(attrBuilder.build());
+			soundpool = builder.build();
+		}else{
+			soundpool = new SoundPool(10, AudioManager.STREAM_MUSIC, 0);
 		}
-		
-		private void startSoundPool(int index){
-			if(soundpool==null){
-				createSoundPool();
-			}
-			
-			soundpool.play(map_sound.get(index),1,1,0,0,1);
+
+		map_sound.put(1,soundpool.load(getContext(),R.raw.sound1,1));
+		map_sound.put(2,soundpool.load(getContext(),R.raw.sound2,1));
+		map_sound.put(3,soundpool.load(getContext(),R.raw.sound3,1));
+		map_sound.put(4,soundpool.load(getContext(),R.raw.sound4,1));
+		map_sound.put(5,soundpool.load(getContext(),R.raw.sound5,1));
+		map_sound.put(6,soundpool.load(getContext(),R.raw.sound6,1));
+		map_sound.put(7,soundpool.load(getContext(),R.raw.sound7,1));
+
+
+	}
+
+	private void startSoundPool(int index){
+		if(soundpool==null){
+			createSoundPool();
 		}
-		
-		public static class BaseItem {
-			public float x;
-			public float y;
-			Bitmap bitmap;
-			Paint paint;
-			public int w;
-			public int h;
-			boolean consumido = false;
-			public BaseItem(Bitmap bitmap,float x,float y){
-				this.bitmap=bitmap;
-				this.x=x;
-				this.y=y;
-				paint=new Paint(Paint.ANTI_ALIAS_FLAG);
-				w=bitmap.getWidth();
-				h=bitmap.getHeight();
-			}
-			
-			public void draw(Canvas canvas){
-				canvas.drawBitmap(bitmap,x,y,paint);
-			}
-			
-			public void move(Canvas canvas,float x,float y){
-				this.x = this.x+x;
-				this.y = this.y+y;
-				draw(canvas);
-			}
-			
-			public void consumir(){
-				consumido=true;
-			}
-			
-		    public void destroy(){
+
+		soundpool.play(map_sound.get(index),1,1,0,0,1);
+	}
+
+	public static class BaseItem {
+		public float x;
+		public float y;
+		Bitmap bitmap;
+		Paint paint;
+		public int w;
+		public int h;
+		boolean consumido = false;
+		public BaseItem(Bitmap bitmap,float x,float y){
+			this.bitmap=bitmap;
+			this.x=x;
+			this.y=y;
+			paint=new Paint(Paint.ANTI_ALIAS_FLAG);
+			w=bitmap.getWidth();
+			h=bitmap.getHeight();
+		}
+
+		public void draw(Canvas canvas){
+			canvas.drawBitmap(bitmap,x,y,paint);
+		}
+
+		public void move(Canvas canvas,float x,float y){
+			this.x = this.x+x;
+			this.y = this.y+y;
+			draw(canvas);
+		}
+
+		public void consumir(){
 			consumido=true;
 		}
-			
+
+		public void destroy(){
+			consumido=true;
 		}
-		
-		
-		public class PlusLifeNave extends BaseItem{
-			
-			PlusLifeNave(float x,float y){
-				super(BitmapFactory.decodeResource(getResources(),R.drawable.plus_nave),x,y);
-			}
 
-			@Override
-			public void consumir()
-			{
-				startSoundPool(2);
-				super.consumir();
-			}
-
-			
-			public void move(Canvas canvas)
-			{
-				if(consumido){
-					return;
-				}
-				super.move(canvas,0,2);
-				if(h>getHeight()){
-					super.destroy();
-				}
-			}
-			}
-			
-		public class PlusLifeMuro extends BaseItem{
-
-			PlusLifeMuro(float x,float y){
-				super(BitmapFactory.decodeResource(getResources(),R.drawable.plus_muro),x,y);
-			}
-
-			@Override
-			public void consumir()
-			{
-				startSoundPool(2);
-				super.consumir();
-			}
+	}
 
 
-			public void move(Canvas canvas)
-			{
-				if(consumido){
-					return;
-				}
-				super.move(canvas,0,2);
-				if(h>getHeight()){
-					super.destroy();
-				}
-			}
-			
+	public class PlusLifeNave extends BaseItem{
+
+		PlusLifeNave(float x,float y){
+			super(BitmapFactory.decodeResource(getResources(),R.drawable.plus_nave),x,y);
 		}
-		
-		public static class Texto{
-			float x;
-			float y;
-			String texto;
-			Paint paint1;
-			Paint paint2;
-			
-			Texto(float x,float y){
-				this.x=x;
-				this.y=y;
-				paint1=new Paint(Paint.ANTI_ALIAS_FLAG);
-				paint2=new Paint(Paint.ANTI_ALIAS_FLAG);
-				paint2.setStyle(Paint.Style.STROKE);
-				paint1.setTextAlign(Paint.Align.CENTER);
-				paint2.setTextAlign(Paint.Align.CENTER);
-				setTextColor(0xff000000);
-				setStrokeColor(0xffffffff);
-				setStrokeWidth(1);
-				
-				
-			}
-			
-			Texto(Texto texto){
-				x=texto.x;
-				y=texto.y;
-				paint1=new Paint(texto.paint1);
-				paint2=new Paint(texto.paint2);
-				this.texto=texto.texto;
-			}
-			
-			void setTypeface(Typeface typeface){
-				paint1.setTypeface(typeface);
-				paint2.setTypeface(typeface);
-			}
-			
-			void setTextSize(float size){
-				paint1.setTextSize(size);
-				paint2.setTextSize(size);
-			}
-			
-			void setText(String texto){
-				this.texto = texto;
-			}
-			
-			void setTextColor(int color){
-				paint1.setColor(color);
-			}
-			void setStrokeWidth(float width){
-				paint2.setStrokeWidth(width);
-			}
-			void setStrokeColor(int color){
-				paint2.setColor(color);
-			}
-			void setStroke(int width,int color){
-				setStrokeColor(color);
-				setStrokeWidth(width);
-			}
-			void draw (Canvas canvas){
-				canvas.drawText(texto,x,y,paint1);
-				canvas.drawText(texto,x,y,paint2);
-			}
-			
-			void darw(Canvas canvas,String texto){
-				canvas.drawText(texto,x,y,paint1);
-				canvas.drawText(texto,x,y,paint2);
-			}
-			
-		    void darw(Canvas canvas,String texto,float x,float y){
-				canvas.drawText(texto,x,y,paint1);
-				canvas.drawText(texto,x,y,paint2);
+
+		@Override
+		public void consumir()
+		{
+			startSoundPool(2);
+			super.consumir();
 		}
-			
+
+
+		public void move(Canvas canvas)
+		{
+			if(consumido){
+				return;
+			}
+			super.move(canvas,0,2);
+			if(h>getHeight()){
+				super.destroy();
+			}
 		}
-		
-		
+	}
+
+	public class PlusLifeMuro extends BaseItem{
+
+		PlusLifeMuro(float x,float y){
+			super(BitmapFactory.decodeResource(getResources(),R.drawable.plus_muro),x,y);
+		}
+
+		@Override
+		public void consumir()
+		{
+			startSoundPool(2);
+			super.consumir();
+		}
+
+
+		public void move(Canvas canvas)
+		{
+			if(consumido){
+				return;
+			}
+			super.move(canvas,0,2);
+			if(h>getHeight()){
+				super.destroy();
+			}
+		}
+
+	}
+
+	public static class Texto{
+		float x;
+		float y;
+		String texto;
+		Paint paint1;
+		Paint paint2;
+
+		Texto(float x,float y){
+			this.x=x;
+			this.y=y;
+			paint1=new Paint(Paint.ANTI_ALIAS_FLAG);
+			paint2=new Paint(Paint.ANTI_ALIAS_FLAG);
+			paint2.setStyle(Paint.Style.STROKE);
+			paint1.setTextAlign(Paint.Align.CENTER);
+			paint2.setTextAlign(Paint.Align.CENTER);
+			setTextColor(0xff000000);
+			setStrokeColor(0xffffffff);
+			setStrokeWidth(1);
+
+
+		}
+
+		Texto(Texto texto){
+			x=texto.x;
+			y=texto.y;
+			paint1=new Paint(texto.paint1);
+			paint2=new Paint(texto.paint2);
+			this.texto=texto.texto;
+		}
+
+		void setTypeface(Typeface typeface){
+			paint1.setTypeface(typeface);
+			paint2.setTypeface(typeface);
+		}
+
+		void setTextSize(float size){
+			paint1.setTextSize(size);
+			paint2.setTextSize(size);
+		}
+
+		void setText(String texto){
+			this.texto = texto;
+		}
+
+		void setTextColor(int color){
+			paint1.setColor(color);
+		}
+		void setStrokeWidth(float width){
+			paint2.setStrokeWidth(width);
+		}
+		void setStrokeColor(int color){
+			paint2.setColor(color);
+		}
+		void setStroke(int width,int color){
+			setStrokeColor(color);
+			setStrokeWidth(width);
+		}
+		void draw (Canvas canvas){
+			canvas.drawText(texto,x,y,paint1);
+			canvas.drawText(texto,x,y,paint2);
+		}
+
+		void darw(Canvas canvas,String texto){
+			canvas.drawText(texto,x,y,paint1);
+			canvas.drawText(texto,x,y,paint2);
+		}
+
+		void darw(Canvas canvas,String texto,float x,float y){
+			canvas.drawText(texto,x,y,paint1);
+			canvas.drawText(texto,x,y,paint2);
+		}
+
+	}
+
+
 	public class Enemigo2 extends Base2{
 		RectF rectf;
 		Paint paint, paint2, paint3;
 		float mx, my;
 		float animationTime = 0;
 		float rotationSpeed = 0.02f;
-		
+
 		Enemigo2(float x,float y){
 			super(x,y);
 			rectf=new RectF(x,y,x+n.n25,y+n.n25);
-			
+
 			// Paint principal - cuerpo
 			paint = new Paint(Paint.ANTI_ALIAS_FLAG);
 			paint.setColor(0xff9b59b6); // Púrpura elegante
 			paint.setStyle(Paint.Style.FILL);
-			
+
 			// Paint secundario - detalles y bordes
 			paint2 = new Paint(Paint.ANTI_ALIAS_FLAG);
 			paint2.setColor(0xffe74c3c); // Rojo brillante
 			paint2.setStyle(Paint.Style.STROKE);
 			paint2.setStrokeWidth(n.get(2));
-			
+
 			// Paint para ojos - brillantes
 			paint3 = new Paint(Paint.ANTI_ALIAS_FLAG);
 			paint3.setColor(0xffffff00); // Amarillo brillante
 			paint3.setStyle(Paint.Style.FILL);
 			paint3.setShadowLayer(3*basesize, 0, 0, 0xffff0000);
 		}
-		
+
 		void move (Canvas canvas){
 			move(canvas,mx,my);
 		}
-		
+
 		public void move(Canvas canvas, float x,float y){
 			this.x=this.x+x;
 			this.y=this.y+y;
 			draw(canvas);
 		}
-		
+
 		public void draw(Canvas canvas){
 			animationTime += rotationSpeed;
-			
+
 			// Actualizar rectángulo del cuerpo
 			rectf=new RectF(x,y,x+n.n25,y+n.n25);
-			
+
 			// Dibujar cuerpo principal - diamante rotante
 			canvas.save();
 			canvas.translate(x + n.n12, y + n.n12);
 			canvas.rotate(animationTime * 180 / (float)Math.PI);
-			
+
 			// Forma de diamante
 			Path diamond = new Path();
 			diamond.moveTo(0, -n.n12);
@@ -2048,34 +2128,34 @@ public class GameView extends View
 			diamond.lineTo(-n.n12, 0);
 			diamond.lineTo(-n.n8, -n.n4);
 			diamond.close();
-			
+
 			canvas.drawPath(diamond, paint);
 			canvas.drawPath(diamond, paint2);
 			canvas.restore();
-			
+
 			// Dibujar núcleo central pulsante
 			float pulse = n.n3 + (float)Math.sin(animationTime * 3) * n.n1;
 			canvas.drawCircle(x + n.n12, y + n.n12, pulse, paint3);
-			
+
 			// Dibujar ojos satélite rotantes
 			for(int i = 0; i < 4; i++){
 				float angle = -animationTime + (i * (float)Math.PI / 2);
 				float orbitRadius = n.n8;
 				float px = x + n.n12 + (float)Math.cos(angle) * orbitRadius;
 				float py = y + n.n12 + (float)Math.sin(angle) * orbitRadius;
-				
+
 				// Ojo con efecto de parpadeo
 				float eyeSize = (float)Math.sin(animationTime * 8 + i) > 0.7f ? n.n1 : n.n2;
 				canvas.drawCircle(px, py, eyeSize, paint3);
 				canvas.drawCircle(px, py, n.n1, paint);
 			}
-			
+
 			// Dibujar anillo energético exterior
 			int ringAlpha = 150 + (int)((float)Math.sin(animationTime * 2) * 50);
 			paint2.setAlpha(ringAlpha);
 			canvas.drawCircle(x + n.n12, y + n.n12, n.n15, paint2);
 			paint2.setAlpha(255);
-			
+
 			// Dibujar pequeños deflectores
 			for(int i = 0; i < 6; i++){
 				float angle = animationTime * 2 + (i * (float)Math.PI / 3);
@@ -2092,28 +2172,28 @@ public class GameView extends View
 		float mx, my;
 		float animationTime = 0;
 		float shieldRadius = 0;
-		
+
 		Boss(float x,float y){
 			super(x,y);
 			rectf=new RectF(x,y,x+n.n40,y+n.n40);
-			
+
 			// Paint principal - cuerpo del jefe
 			paint = new Paint(Paint.ANTI_ALIAS_FLAG);
 			paint.setColor(0xffdc143c); // Rojo oscuro
 			paint.setStyle(Paint.Style.FILL);
-			
+
 			// Paint secundario - detalles y bordes
 			paint2 = new Paint(Paint.ANTI_ALIAS_FLAG);
 			paint2.setColor(0xffffd700); // Dorado brillante
 			paint2.setStyle(Paint.Style.STROKE);
 			paint2.setStrokeWidth(n.get(3));
-			
+
 			// Paint para ojos - brillantes
 			paint3 = new Paint(Paint.ANTI_ALIAS_FLAG);
 			paint3.setColor(0xffffff00); // Amarillo brillante
 			paint3.setStyle(Paint.Style.FILL);
 			paint3.setShadowLayer(5*basesize, 0, 0, 0xffff0000);
-			
+
 			// Paint para escudo energético
 			paint4 = new Paint(Paint.ANTI_ALIAS_FLAG);
 			paint4.setColor(0xff00ffff); // Cyan brillante
@@ -2121,28 +2201,28 @@ public class GameView extends View
 			paint4.setStrokeWidth(n.get(2));
 			paint4.setAlpha(150);
 		}
-		
+
 		void move (Canvas canvas){
 			move(canvas,mx,my);
 		}
-		
+
 		public void move(Canvas canvas, float x,float y){
 			this.x=this.x+x;
 			this.y=this.y+y;
 			draw(canvas);
 		}
-		
+
 		public void draw(Canvas canvas){
 			animationTime += 0.05f;
 			shieldRadius = n.n30 + (float)Math.sin(animationTime) * n.n5;
-			
+
 			// Actualizar rectángulo del cuerpo
 			rectf=new RectF(x-n.n20,y-n.n20,x+n.n20,y+n.n20);
-			
+
 			// Dibujar escudo energético animado
 			paint4.setAlpha(100 + (int)((float)Math.sin(animationTime * 2) * 50));
 			canvas.drawCircle(x, y, shieldRadius, paint4);
-			
+
 			// Dibujar cuerpo principal - hexágono
 			Path hexagon = new Path();
 			for(int i = 0; i < 6; i++){
@@ -2158,11 +2238,11 @@ public class GameView extends View
 			hexagon.close();
 			canvas.drawPath(hexagon, paint);
 			canvas.drawPath(hexagon, paint2);
-			
+
 			// Dibujar núcleo central
 			canvas.drawCircle(x, y, n.n8, paint3);
 			canvas.drawCircle(x, y, n.n5, paint);
-			
+
 			// Dibujar anillo exterior con ojos rotantes
 			for(int i = 0; i < 8; i++){
 				float angle = animationTime + (i * (float)Math.PI / 4);
@@ -2170,17 +2250,17 @@ public class GameView extends View
 				float py = y + (float)Math.sin(angle) * n.n15;
 				canvas.drawCircle(px, py, n.n3, paint3);
 			}
-			
+
 			// Dibujar cañones laterales
 			float cannonOffset = (float)Math.sin(animationTime * 3) * n.n3;
 			// Cañón izquierdo
 			canvas.drawRect(x-n.n25-cannonOffset, y-n.n3, x-n.n15-cannonOffset, y+n.n3, paint);
 			canvas.drawRect(x-n.n25-cannonOffset, y-n.n2, x-n.n15-cannonOffset, y+n.n2, paint3);
-			
+
 			// Cañón derecho
 			canvas.drawRect(x+n.n15+cannonOffset, y-n.n3, x+n.n25+cannonOffset, y+n.n3, paint);
 			canvas.drawRect(x+n.n15+cannonOffset, y-n.n2, x+n.n25+cannonOffset, y+n.n2, paint3);
-			
+
 			// Dibujar ojos brillantes
 			float eyeBlink = (float)Math.sin(animationTime * 8) > 0.8f ? n.n2 : n.n4;
 			canvas.drawCircle(x-n.n8, y-n.n5, eyeBlink, paint3);
@@ -2206,7 +2286,7 @@ public class GameView extends View
 			anulable=true;
 		}
 	}
-	
+
 	public class N{
 		final float n1,n2,n3,n4,n5,n8,n10,n12,n15,n20,n25,n30,n40;
 		float base;
@@ -2226,14 +2306,14 @@ public class GameView extends View
 			n30=get(30);
 			n40=get(40);
 		}
-		
+
 		float get(float num){
 			if(base == 0) return 0;
 			return num*base;
 		}
 	}
-	
-	
+
+
 	public void setOnGameOverListener(OnGameOverListener ongameover){
 		if(ongameover!=null){
 			this.ongameover=ongameover;
