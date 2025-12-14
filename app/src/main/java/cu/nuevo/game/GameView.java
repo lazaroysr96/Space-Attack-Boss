@@ -111,7 +111,7 @@ public class GameView extends View
 		muro.draw(canvas);
 		generate();
 		if(!nave.isEliminada()){
-			nave.draw2(canvas,x,y-n.n40);
+			nave.draw2(canvas,getWidth(),getHeight());
 		}
 
 		gameStart(canvas);
@@ -210,6 +210,12 @@ public class GameView extends View
 	private void event_down(){
 	}
 	private void event_move(){
+		// Control del cañón con el dedo - limitado al carril inferior
+		if(!nave.isEliminada()){
+			// El cañón sigue la posición X del dedo pero se mantiene en el carril inferior
+			nave.x = x; // Posición X sigue al dedo
+			// La posición Y se mantiene fija en el carril inferior (se maneja en draw2)
+		}
 	}
 	private void event_up(){
 	}
@@ -1168,13 +1174,18 @@ public class GameView extends View
 	}
 
 	public class Nave extends UnidadBase{
-		float x = 0,y=0;
+		float x = 0,y = 0;
 		int speedAtak = 25;
 		int life = 1;
 		Paint paint, paint2, paint3, paint4, paint5;
 		Bitmap bitmap;
 		float animationTime = 0;
 		float engineGlow = 0;
+		float cannonPosition = 0; // Posición en el carril inferior
+		float cannonSpeed = 2f; // Velocidad de movimiento automático
+		float cannonDirection = 1; // Dirección de movimiento (1 = derecha, -1 = izquierda)
+		float screenCenterX; // Centro de la pantalla para límites
+		float cannonRange; // Rango de movimiento del cañón
 
 		Nave(){
 			paint= new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -1214,64 +1225,84 @@ public class GameView extends View
 			drawBitmapCenter(canvas,bitmap,basesize,x,y,paint);
 		}
 
-		public void draw2(Canvas canvas,float x,float y){
-			this.x=x;
-			this.y=y;
+		public void draw2(Canvas canvas,float screenWidth,float screenHeight){
+			// Inicializar valores de pantalla si es la primera vez
+			if(screenCenterX == 0){
+				screenCenterX = screenWidth / 2;
+				cannonRange = screenWidth * 0.4f; // El cañón se mueve en 40% del ancho
+				this.x = screenCenterX; // Posición inicial en el centro
+			}
+
+			// Limitar movimiento del cañón al carril inferior
+			// La posición X ya viene del control táctil (event_move)
+			// Solo aseguramos que no se salga de los límites de la pantalla
+			this.x = Math.max(n.n20, Math.min(screenWidth - n.n20, this.x));
+			
+			// Posición fija en la parte inferior (80% desde arriba)
+			this.y = screenHeight * 0.8f;
+			
 			animationTime += 0.03f;
 			engineGlow = 0.5f + (float)Math.sin(animationTime * 4) * 0.5f;
+
+			// Dibujar carril/rail del cañón
+			paint2.setAlpha(100);
+			canvas.drawLine(screenCenterX - cannonRange, this.y, screenCenterX + cannonRange, this.y, paint2);
+			paint2.setAlpha(255);
 
 			// Dibujar escudo energético
 			int shieldAlpha = 100 + (int)((float)Math.sin(animationTime * 2) * 50);
 			paint5.setAlpha(shieldAlpha);
-			canvas.drawCircle(x, y, n.n30, paint5);
+			canvas.drawCircle(this.x, this.y, n.n30, paint5);
 			paint5.setAlpha(255);
 
-			// Dibujar cuerpo principal - nave espacial mejorada
-			Path shipBody = new Path();
+			// Dibujar cuerpo principal - cañón de muro mejorado
+			Path cannonBody = new Path();
 
-			// Fuselaje principal
-			shipBody.moveTo(x, y - n.n20);
-			shipBody.lineTo(x - n.n8, y - n.n10);
-			shipBody.lineTo(x - n.n15, y);
-			shipBody.lineTo(x - n.n8, y + n.n15);
-			shipBody.lineTo(x - n.n4, y + n.n20);
-			shipBody.lineTo(x, y + n.n15);
-			shipBody.lineTo(x + n.n4, y + n.n20);
-			shipBody.lineTo(x + n.n8, y + n.n15);
-			shipBody.lineTo(x + n.n15, y);
-			shipBody.lineTo(x + n.n8, y - n.n10);
-			shipBody.close();
+			// Base del cañón (forma rectangular con bordes redondeados)
+			cannonBody.moveTo(this.x - n.n20, this.y - n.n8);
+			cannonBody.lineTo(this.x - n.n20, this.y + n.n8);
+			cannonBody.lineTo(this.x - n.n15, this.y + n.n10);
+			cannonBody.lineTo(this.x + n.n15, this.y + n.n10);
+			cannonBody.lineTo(this.x + n.n20, this.y + n.n8);
+			cannonBody.lineTo(this.x + n.n20, this.y - n.n8);
+			cannonBody.lineTo(this.x + n.n15, this.y - n.n10);
+			cannonBody.lineTo(this.x - n.n15, this.y - n.n10);
+			cannonBody.close();
 
 			// Aplicar color según nivel de vida
-			//paint.setColor(getColorLevel(life-1));
-			paint.setColor(0xffff0000);
-			canvas.drawPath(shipBody, paint);
-			canvas.drawPath(shipBody, paint2);
+			paint.setColor(getColorLevel(life-1));
+			canvas.drawPath(cannonBody, paint);
+			canvas.drawPath(cannonBody, paint2);
 
-			// Dibujar cabina
-			canvas.drawCircle(x, y - n.n5, n.n4, paint4);
-			canvas.drawCircle(x, y - n.n5, n.n2, paint);
+			// Dibujar cañón principal (tubo)
+			RectF cannonTube = new RectF(this.x - n.n4, this.y - n.n15, this.x + n.n4, this.y - n.n5);
+			canvas.drawRoundRect(cannonTube, n.n2, n.n2, paint);
+			canvas.drawRoundRect(cannonTube, n.n2, n.n2, paint2);
+
+			// Dibujar cabina/sensor
+			canvas.drawCircle(this.x, this.y - n.n5, n.n4, paint4);
+			canvas.drawCircle(this.x, this.y - n.n5, n.n2, paint);
 
 			// Dibujar motores con efecto de pulsación
 			float engineSize = n.n3 * (1 + engineGlow * 0.3f);
 
 			// Motor izquierdo
-			canvas.drawCircle(x - n.n8, y + n.n20, engineSize, paint3);
-			canvas.drawCircle(x - n.n8, y + n.n20, n.n2, paint);
+			canvas.drawCircle(this.x - n.n8, this.y + n.n10, engineSize, paint3);
+			canvas.drawCircle(this.x - n.n8, this.y + n.n10, n.n2, paint);
 
 			// Motor derecho
-			canvas.drawCircle(x + n.n8, y + n.n20, engineSize, paint3);
-			canvas.drawCircle(x + n.n8, y + n.n20, n.n2, paint);
+			canvas.drawCircle(this.x + n.n8, this.y + n.n10, engineSize, paint3);
+			canvas.drawCircle(this.x + n.n8, this.y + n.n10, n.n2, paint);
 
 			// Motor central
-			canvas.drawCircle(x, y + n.n20 - n.n2, engineSize * 0.8f, paint3);
-			canvas.drawCircle(x, y + n.n20 - n.n2, n.n2, paint);
+			canvas.drawCircle(this.x, this.y + n.n8, engineSize * 0.8f, paint3);
+			canvas.drawCircle(this.x, this.y + n.n8, n.n2, paint);
 
 			// Dibujar llamas de los motores
 			for(int i = 0; i < 3; i++){
 				float flameOffset = (float)Math.sin(animationTime * 8 + i * 2) * n.n2;
-				float flameX = x + (i - 1) * n.n8;
-				float flameY = y + n.n25 + flameOffset;
+				float flameX = this.x + (i - 1) * n.n8;
+				float flameY = this.y + n.n15 + flameOffset;
 
 				Path flame = new Path();
 				flame.moveTo(flameX - n.n1, flameY);
@@ -1285,20 +1316,20 @@ public class GameView extends View
 			}
 
 			// Dibujar armas laterales
-			canvas.drawRect(x - n.n20, y - n.n2, x - n.n15, y + n.n2, paint2);
-			canvas.drawRect(x + n.n15, y - n.n2, x + n.n20, y + n.n2, paint2);
+			canvas.drawRect(this.x - n.n20, this.y - n.n2, this.x - n.n15, this.y + n.n2, paint2);
+			canvas.drawRect(this.x + n.n15, this.y - n.n2, this.x + n.n20, this.y + n.n2, paint2);
 
 			// Dibujar puntos de energía giratorios
 			for(int i = 0; i < 6; i++){
 				float angle = -animationTime + (i * (float)Math.PI / 3);
-				float px = x + (float)Math.cos(angle) * n.n12;
-				float py = y + (float)Math.sin(angle) * n.n12;
+				float px = this.x + (float)Math.cos(angle) * n.n12;
+				float py = this.y + (float)Math.sin(angle) * n.n12;
 				canvas.drawCircle(px, py, n.n1, paint4);
 			}
 
 			// Dibujar sensores frontales
-			canvas.drawCircle(x - n.n5, y - n.n12, n.n1, paint2);
-			canvas.drawCircle(x + n.n5, y - n.n12, n.n1, paint2);
+			canvas.drawCircle(this.x - n.n5, this.y - n.n12, n.n1, paint2);
+			canvas.drawCircle(this.x + n.n5, this.y - n.n12, n.n1, paint2);
 		}
 
 		public void life(int l){
