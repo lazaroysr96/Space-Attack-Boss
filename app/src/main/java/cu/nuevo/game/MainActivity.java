@@ -13,406 +13,413 @@ import android.media.*;
 import android.animation.*;
 import android.view.animation.*;
 
-public class MainActivity extends Activity 
-{
+public class MainActivity extends Activity {
 	FrameLayout framelayout;
 	ImageView play;
 	MediaPlayer bgsound;
 	GameView gameview;
 	TextView history;
-	ImageView img1,img2;
-	private boolean isGameStarted=false;
+	ImageView img1, img2;
+	private boolean isGameStarted = false;
 	String[] historia = {
-		"Durante mucho tiempo se pensó que estábamos solos",
-		"La humanidad anhelaba el contacto con otras civilizaciones",
-		"Durante mucho tiempo, se enviaron mensajes por todo el universo",
-		"Finalmente alguien nos escuchó",
-		"Mas sus intenciones",
-		"No eran amistosas",
-		"Era demasiado tarde",
-		"Nuestro planeta ya estaba ubicado",
-		"Las naciones se unieron en una sola",
-		"Crearon la Liga de Defensa Planetaria",
-		"El futuro de la humanidad era incierto",
-		"Se construyó un muro para la defensa del planeta",
-		"Aunque este era capaz de interceptar los asteroides enviados por el enemigo",
-		"No era suficiente",
-		"No podía detener el ataque directo de los alienígenas",
-		"La Liga de Defensa Planetaria utilizó sus últimos recursos en el desarrollo del arma de defensa definitiva",
-		"Una nave con capacidad ofensiva para enfrentar cualquier enemigo",
-		"El enemigo lanzó su última oleada",
-		"El todo por el todo",
-		"Eres el último piloto",
-		"Tienes la misión de resistir tanto como sea posible",
-		"No permitas que el enemigo alcance el planeta",
-		"¡¡¡Listo para la batalla!!!"
+			"Durante mucho tiempo se pensó que estábamos solos",
+			"La humanidad anhelaba el contacto con otras civilizaciones",
+			"Durante mucho tiempo, se enviaron mensajes por todo el universo",
+			"Finalmente alguien nos escuchó",
+			"Mas sus intenciones",
+			"No eran amistosas",
+			"Era demasiado tarde",
+			"Nuestro planeta ya estaba ubicado",
+			"Las naciones se unieron en una sola",
+			"Crearon la Liga de Defensa Planetaria",
+			"El futuro de la humanidad era incierto",
+			"Se construyó un muro para la defensa del planeta",
+			"Aunque este era capaz de interceptar los asteroides enviados por el enemigo",
+			"No era suficiente",
+			"No podía detener un ataque directo de los alienígenas",
+			"La Liga de Defensa Planetaria utilizó sus últimos recursos en el desarrollo del arma de defensa definitiva",
+			"Una plataforma de defenza orvital con capacidad ofensiva para enfrentar cualquier amenaza exterior",
+			"El enemigo lanzó su última oleada",
+			"El todo por el todo",
+			"Eres el último piloto",
+			"Tienes la misión de resistir tanto como sea posible",
+			"No permitas que el enemigo alcance el planeta",
+			"¡¡¡Listo para la batalla!!!"
+
 	};
-	
-    @Override
-    protected void onCreate(Bundle savedInstanceState)
-    {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.main);
+
+	int history_narration[] = {
+			R.raw.narracion_001,
+			R.raw.narracion_002,
+			R.raw.narracion_003,
+			R.raw.narracion_004,
+			R.raw.narracion_005,
+			R.raw.narracion_006,
+			R.raw.narracion_007,
+			R.raw.narracion_008,
+			R.raw.narracion_009,
+			R.raw.narracion_010,
+			R.raw.narracion_011,
+			R.raw.narracion_012,
+			R.raw.narracion_013,
+			R.raw.narracion_014,
+			R.raw.narracion_015,
+			R.raw.narracion_016,
+			R.raw.narracion_017
+	};
+
+	String missions[] = {
+            "Elimina a 50 enemigos",
+            "Elimina a 100 enemigos",
+            "Elimina a 150 enemigos",
+            "Recolecta 10 vidas para tu nave",
+            "Recolecta 10 vidas de defensa planetaria",
+
+	};
+
+	SharedPreferences gameData;
+
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.main);
+		gameData = getSharedPreferences("gameData", Context.MODE_PRIVATE);
 		framelayout = findViewById(R.id.mainFrameLayout);
-		play= findViewById(R.id.mainImageView);
-		history=findViewById(R.id.mainTextView1);
-		img1=findViewById(R.id.mainImageView1);
-		img2=findViewById(R.id.mainImageView2);
-		
-		if(getActionBar()!=null){
+		play = findViewById(R.id.mainImageView);
+		history = findViewById(R.id.mainTextView1);
+		img1 = findViewById(R.id.mainImageView1);
+		img2 = findViewById(R.id.mainImageView2);
+
+		if (getActionBar() != null) {
 			getActionBar().hide();
 		}
-		
+
 		// startGame();
-		
-		play.setOnClickListener(new View.OnClickListener(){
-				@Override
-				public void onClick(View p1)
-				{
-					startGame();
-				}
-			});
-			
-			history.setTypeface(Typeface.createFromAsset(getAssets(),"pixel_font.ttf"));
-		history.setOnClickListener(new View.OnClickListener(){
 
-				@Override
-				public void onClick(View p1)
-				{
-					//nextAction();
-					
-				}
-			});
-			
-			
-			
+		play.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View p1) {
+				startGame(0);
+			}
+		});
+
+		history.setTypeface(Typeface.createFromAsset(getAssets(), "pixel_font.ttf"));
+
+		if (gameData.getBoolean("history", true)) {
 			mostrarHistoria();
-			
+		} else {
+			startGame();
+		}
+
 		getWindow().setFlags(1024, 1024);
-		bgsound=MediaPlayer.create(MainActivity.this,R.raw.bg_history);
+		bgsound = MediaPlayer.create(MainActivity.this, R.raw.bg_history);
 		bgsound.start();
-    }
-	
-	private void startGame(){
-		isGameStarted=true;
+	}
+
+	private void startGame() {
+		int miss = gameData.getInt("mission", 1) - 1;
+		String mission = miss < missions.length ? missions[miss] : "Elimina a 500 enemigos";
+		animateTerminalText(history, mission);
+		history.setOnClickListener(new View.OnClickListener() {
+
+			@Override
+			public void onClick(View p1) {
+				startGame(0);
+
+			}
+		});
+	}
+
+	private void startGame(int x) {
+		isGameStarted = true;
+		history.setVisibility(View.GONE);
 		framelayout.removeAllViews();
-		gameview= new GameView(this);
-		gameview.setOnGameOverListener(new GameView.OnGameOverListener(){
+		gameview = new GameView(this);
+		gameview.setOnGameOverListener(new GameView.OnGameOverListener() {
 
-				@Override
-				public void onGameOver()
-				{
-					bgsound.stop();
-					bgsound=MediaPlayer.create(MainActivity.this,R.raw.gameover);
-					bgsound.setLooping(true);
-					bgsound.start();
-				}
-			});
-		gameview.setOnGameVictoryListener(new GameView.OnGameVictoryListener(){
+			@Override
+			public void onGameOver() {
+				bgsound.stop();
+				bgsound = MediaPlayer.create(MainActivity.this, R.raw.gameover);
+				bgsound.setLooping(true);
+				bgsound.start();
+			}
+		});
+		gameview.setOnGameVictoryListener(new GameView.OnGameVictoryListener() {
 
-				@Override
-				public void onGameVictory()
-				{
-					// Transición suave de música con fade out
-					if(bgsound != null && bgsound.isPlaying()){
-						// Reducir volumen gradualmente (fade out)
-						fadeOutMusic(new Runnable() {
-							@Override
-							public void run() {
-								// Una vez completado el fade out, cambiar música
-								bgsound.stop();
-								bgsound=MediaPlayer.create(MainActivity.this,R.raw.bg_victory);
-								bgsound.setLooping(false);
-								
-								// Iniciar con fade in
-								bgsound.setVolume(0f, 0f);
-								bgsound.start();
-								fadeInMusic();
-							}
-						});
-					}
+			@Override
+			public void onGameVictory() {
+				gameData.edit().putInt("mission", gameData.getInt("mission", 1) + 1).commit();
+				// Transición suave de música con fade out
+				if (bgsound != null && bgsound.isPlaying()) {
+					// Reducir volumen gradualmente (fade out)
+					fadeOutMusic(new Runnable() {
+						@Override
+						public void run() {
+							// Una vez completado el fade out, cambiar música
+							bgsound.stop();
+							bgsound = MediaPlayer.create(MainActivity.this, R.raw.bg_victory);
+							bgsound.setLooping(false);
+
+							// Iniciar con fade in
+							bgsound.setVolume(0f, 0f);
+							bgsound.start();
+							fadeInMusic();
+						}
+					});
 				}
-			});
+			}
+		});
 		framelayout.addView(gameview);
 
 		ObjectAnimator anim = new ObjectAnimator();
 		anim.setTarget(framelayout);
 		anim.setPropertyName("alpha");
-		anim.setFloatValues(0.25f,1);
+		anim.setFloatValues(0.25f, 1);
 		anim.setDuration(1500);
 		anim.setInterpolator(new DecelerateInterpolator());
 		anim.start();
-		
-		if(bgsound!=null){
-			bgsound.stop();
-			bgsound=null;
-		}
-		bgsound = MediaPlayer.create(this,R.raw.bg_game);
-		bgsound.setVolume(0.5f,0.5f);
-		bgsound.setOnCompletionListener(new MediaPlayer.OnCompletionListener(){
 
-				@Override
-				public void onCompletion(MediaPlayer p1)
-				{
-					//cambiar
-					bgsound = MediaPlayer.create(MainActivity.this,R.raw.bg_game);
-					bgsound.start();
-				}
-			});
-		bgsound.start();
-		
-		
+		fadeOutMusic(new Runnable() {
+			@Override
+			public void run() {
+				// Una vez completado el fade out, cambiar música
+				bgsound.stop();
+				bgsound = MediaPlayer.create(MainActivity.this, R.raw.bg_game);
+				bgsound.setLooping(true);
+
+				// Iniciar con fade in
+				bgsound.setVolume(0.1f, 0.1f);
+				bgsound.start();
+				fadeInMusic();
+			}
+		});
 	}
-	
+
 	private Handler fadeHandler = new Handler();
 	private boolean isFading = false;
-	
+
 	private void fadeOutMusic(final Runnable onComplete) {
-		if(isFading || bgsound == null) return;
+		if (isFading || bgsound == null)
+			return;
 		isFading = true;
-		
+
 		final int fadeDuration = 2000; // 2 segundos para fade out
 		final int fadeSteps = 20;
 		final float stepVolume = 0.5f / fadeSteps; // Volume actual (0.5) dividido en pasos
 		final int stepDelay = fadeDuration / fadeSteps;
-		
+
 		Runnable fadeRunnable = new Runnable() {
 			private int currentStep = 0;
-			
+
 			@Override
 			public void run() {
-				if(currentStep < fadeSteps && bgsound != null && bgsound.isPlaying()) {
+				if (currentStep < fadeSteps && bgsound != null && bgsound.isPlaying()) {
 					float newVolume = 0.5f - (stepVolume * currentStep);
-					if(newVolume < 0) newVolume = 0;
+					if (newVolume < 0)
+						newVolume = 0;
 					bgsound.setVolume(newVolume, newVolume);
-					
+
 					currentStep++;
 					fadeHandler.postDelayed(this, stepDelay);
 				} else {
 					// Fade out completado
-					if(bgsound != null) {
+					if (bgsound != null) {
 						bgsound.setVolume(0f, 0f);
 					}
 					isFading = false;
-					if(onComplete != null) {
+					if (onComplete != null) {
 						onComplete.run();
 					}
 				}
 			}
 		};
-		
+
 		fadeHandler.post(fadeRunnable);
 	}
-	
+
 	private void fadeInMusic() {
-		if(bgsound == null) return;
-		
+		if (bgsound == null)
+			return;
+
 		final int fadeDuration = 1500; // 1.5 segundos para fade in
 		final int fadeSteps = 15;
 		final float stepVolume = 1.0f / fadeSteps;
 		final int stepDelay = fadeDuration / fadeSteps;
-		
+
 		Runnable fadeRunnable = new Runnable() {
 			private int currentStep = 0;
-			
+
 			@Override
 			public void run() {
-				if(currentStep < fadeSteps && bgsound != null && bgsound.isPlaying()) {
+				if (currentStep < fadeSteps && bgsound != null && bgsound.isPlaying()) {
 					float newVolume = stepVolume * currentStep;
-					if(newVolume > 1.0f) newVolume = 1.0f;
+					if (newVolume > 1.0f)
+						newVolume = 1.0f;
 					bgsound.setVolume(newVolume, newVolume);
-					
+
 					currentStep++;
 					fadeHandler.postDelayed(this, stepDelay);
 				} else {
 					// Fade in completado
-					if(bgsound != null) {
+					if (bgsound != null) {
 						bgsound.setVolume(1.0f, 1.0f);
 					}
 				}
 			}
 		};
-		
+
 		fadeHandler.post(fadeRunnable);
 	}
-	
-	int index=0;
-	public void mostrarHistoria(){
-		animateTerminalText(history,historia[index]);
-		index = ++index!=historia.length? index:0;
-		
-		
-		
+
+	int index = 0;
+
+	public void mostrarHistoria() {
+		animateTerminalText(history, historia[index]);
+		index = ++index != historia.length ? index : 0;
+
 	}
-	
-	
-	public void toast(String str){
-		Toast.makeText(this,str,Toast.LENGTH_LONG).show();
+
+	public void toast(String str) {
+		Toast.makeText(this, str, Toast.LENGTH_LONG).show();
 	}
 
 	@Override
-	protected void onResume()
-	{
-		if(bgsound!=null){
+	protected void onResume() {
+		if (bgsound != null) {
 			bgsound.start();
 		}
-		
+
 		super.onResume();
 	}
 
 	@Override
-	protected void onPause()
-	{
-		if(bgsound!=null){
+	protected void onPause() {
+		if (bgsound != null) {
 			bgsound.pause();
 		}
-		
+
 		super.onPause();
 	}
-	
-	
-	private void nextImage(final int id){
+
+	private void nextImage(final int id) {
 		img2.setImageResource(id);
 		img2.setVisibility(View.VISIBLE);
 		ObjectAnimator anim = new ObjectAnimator();
 		anim.setTarget(img2);
 		anim.setPropertyName("alpha");
 		anim.setDuration(1000);
-		anim.setFloatValues(0,1);
-		anim.addListener(new Animator.AnimatorListener(){
+		anim.setFloatValues(0, 1);
+		anim.addListener(new Animator.AnimatorListener() {
 
-				@Override
-				public void onAnimationStart(Animator p1)
-				{
-					// TODO: Implement this method
-				}
+			@Override
+			public void onAnimationStart(Animator p1) {
+				// TODO: Implement this method
+			}
 
-				@Override
-				public void onAnimationEnd(Animator p1)
-				{
-					img1.setImageResource(id);
-					img2.setVisibility(View.GONE);
-				}
+			@Override
+			public void onAnimationEnd(Animator p1) {
+				img1.setImageResource(id);
+				img2.setVisibility(View.GONE);
+			}
 
-				@Override
-				public void onAnimationCancel(Animator p1)
-				{
-					// TODO: Implement this method
-				}
+			@Override
+			public void onAnimationCancel(Animator p1) {
+				// TODO: Implement this method
+			}
 
-				@Override
-				public void onAnimationRepeat(Animator p1)
-				{
-					// TODO: Implement this method
-				}
-			});
+			@Override
+			public void onAnimationRepeat(Animator p1) {
+				// TODO: Implement this method
+			}
+		});
 		anim.start();
+
+		if (index < history_narration.length) {
+			// MediaPlayer.create(this,history_narration[index]).start();
+		}
 	}
-	
-	private void nextAction(){
-		if(isGameStarted){return;}
-		if(index==0){
+
+	private void nextAction() {
+		if (isGameStarted) {
+			return;
+		}
+		if (index == 0) {
+			gameData.edit().putBoolean("history", false).commit();
 			startGame();
-		}else{
+		} else {
 			mostrarHistoria();
 		}
 
-		if(index==3){
+		if (index == 3) {
 			nextImage(R.drawable.h3);
 		}
 
-		if(index==18){
-			img1.setScaleType(ImageView.ScaleType.FIT_CENTER);
+		if (index == 5) {
+			nextImage(R.drawable.h2);
+		}
+
+		if (index == 7) {
+			nextImage(R.drawable.h6);
+		}
+
+		if (index == 11) {
+			// img1.setScaleType(ImageView.ScaleType.FIT_CENTER);
 			nextImage(R.drawable.h5);
 		}
 	}
-	
-	
+
 	private void animateTerminalText(final TextView textView, final String fullText) {
-        final Handler textHandler = new Handler();
-        final int[] charIndex = {0};
+		final Handler textHandler = new Handler();
+		final int[] charIndex = { 0 };
 
-        Runnable typeWriter = new Runnable() {
-            @Override
-            public void run() {
-                if (charIndex[0] < fullText.length()) {
-                    String currentText = fullText.substring(0, charIndex[0] + 1);
-                    textView.setText(currentText);
-                    charIndex[0]++;
+		Runnable typeWriter = new Runnable() {
+			@Override
+			public void run() {
+				if (charIndex[0] < fullText.length()) {
+					String currentText = fullText.substring(0, charIndex[0] + 1);
+					textView.setText(currentText);
+					charIndex[0]++;
 
-                    // Velocidad de escritura variable para efecto más realista
-                    int delay = 50 ; // 50-80ms por caracter
-                    textHandler.postDelayed(this, delay);
-                } else {
-					textHandler.postDelayed(new Runnable(){
+					// Velocidad de escritura variable para efecto más realista
+					int delay = 50; // 50-80ms por caracter
+					textHandler.postDelayed(this, delay);
+				} else {
+					textHandler.postDelayed(new Runnable() {
 
-							@Override
-							public void run()
-							{
-								nextAction();
-							}
-						},3000);
-                    // Efecto de parpadeo del cursor al finalizar
-                    //animateCursor(textView, fullText);
-                }
-            }
-        };
+						@Override
+						public void run() {
+							nextAction();
+						}
+					}, 1500);
+					// Efecto de parpadeo del cursor al finalizar
+					// animateCursor(textView, fullText);
+				}
+			}
+		};
 
-        textHandler.post(typeWriter);
-    }
-/*
-    private void animateCursor(final TextView textView, final String baseText) {
-        final Handler cursorHandler = new Handler();
-        final boolean[] showCursor = {true};
+		textHandler.post(typeWriter);
+	}
 
-        Runnable cursorBlink = new Runnable() {
-            @Override
-            public void run() {
-                if (currentToast != null && currentToast.getParent() != null) {
-                    String text = showCursor[0] ? baseText : baseText.substring(0, baseText.length() - 1);
-                    textView.setText(text);
-                    showCursor[0] = !showCursor[0];
-                    cursorHandler.postDelayed(this, 300); // Parpadeo cada 300ms
-                }
-            }
-        };
 
-        cursorHandler.post(cursorBlink);
-    }
-	
-	*/
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
 	public static class bug extends Activity {
 
 		String[] exceptionType = {
-			"StringIndexOutOfBoundsException",
-			"IndexOutOfBoundsException",
-			"ArithmeticException",
-			"NumberFormatException",
-			"ActivityNotFoundException"
+				"StringIndexOutOfBoundsException",
+				"IndexOutOfBoundsException",
+				"ArithmeticException",
+				"NumberFormatException",
+				"ActivityNotFoundException"
 
 		};
 
-		String[] errMessage= {
-			"Invalid string operation\n",
-			"Invalid list operation\n",
-			"Invalid arithmetical operation\n",
-			"Invalid toNumber block operation\n",
-			"Invalid intent operation"
+		String[] errMessage = {
+				"Invalid string operation\n",
+				"Invalid list operation\n",
+				"Invalid arithmetical operation\n",
+				"Invalid toNumber block operation\n",
+				"Invalid intent operation"
 		};
-
 
 		@Override
 		protected void onCreate(Bundle savedInstanceState) {
@@ -423,11 +430,11 @@ public class MainActivity extends Activity
 			Intent intent = getIntent();
 			String errMsg = "";
 			String madeErrMsg = "";
-			if(intent != null){
+			if (intent != null) {
 				errMsg = intent.getStringExtra("error");
 
 				String[] spilt = errMsg.split("\n");
-				//errMsg = spilt[0];
+				// errMsg = spilt[0];
 				try {
 					for (int j = 0; j < exceptionType.length; j++) {
 						if (spilt[0].contains(exceptionType[j])) {
@@ -441,12 +448,14 @@ public class MainActivity extends Activity
 						}
 					}
 
-					if(madeErrMsg.isEmpty()) madeErrMsg = errMsg;
-				}catch(Exception e){}
+					if (madeErrMsg.isEmpty())
+						madeErrMsg = errMsg;
+				} catch (Exception e) {
+				}
 
 			}
 			final int textColor = Color.WHITE;
-			final int backgroundColor=0xff000000;
+			final int backgroundColor = 0xff000000;
 			final int buttonBackgroundColor = 0x20ffffff;
 
 			LinearLayout linear_main = new LinearLayout(this);
@@ -462,17 +471,18 @@ public class MainActivity extends Activity
 
 			linear_main.setOrientation(LinearLayout.VERTICAL);
 			linear_titulo_text.setOrientation(LinearLayout.VERTICAL);
-			linear_main.setPadding(10,10,10,10);
+			linear_main.setPadding(10, 10, 10, 10);
 			linear_main.setBackgroundColor(backgroundColor);
 
 			linear_titulo.addView(linear_titulo_text);
 			linear_titulo_text.addView(textview_titulo);
 			linear_titulo_text.addView(textview_subtitulo);
 			linear_main.addView(linear_titulo);
-			linear_main.addView(linear_texto_content,new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.MATCH_PARENT,1));
+			linear_main.addView(linear_texto_content, new LinearLayout.LayoutParams(
+					LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT, 1));
 			linear_texto_content.addView(sr);
 			linear_texto_content.setOrientation(LinearLayout.VERTICAL);
-			linear_texto_content.setPadding(0,10,0,10);
+			linear_texto_content.setPadding(0, 10, 0, 10);
 			sr.addView(textview_error);
 
 			textview_titulo.setTextColor(textColor);
@@ -480,12 +490,13 @@ public class MainActivity extends Activity
 			textview_error.setTextColor(textColor);
 
 			textview_titulo.setTextSize(20);
-			textview_titulo.setTypeface(null,Typeface.BOLD);
+			textview_titulo.setTypeface(null, Typeface.BOLD);
 			textview_titulo.setText("): Ha ocurrido un error :(");
 
-			textview_subtitulo.setTypeface(null,Typeface.ITALIC);
+			textview_subtitulo.setTypeface(null, Typeface.ITALIC);
 			textview_titulo.setTextSize(20);
-			textview_subtitulo.setText("Lamentamos informarle que hubo un error inesperado durante la ejecución de la aplicación, si éste error persiste envíe un informe al desarrollador");
+			textview_subtitulo.setText(
+					"Lamentamos informarle que hubo un error inesperado durante la ejecución de la aplicación, si éste error persiste envíe un informe al desarrollador");
 
 			textview_error.setText(errMsg);
 
@@ -493,25 +504,22 @@ public class MainActivity extends Activity
 			button.setBackgroundColor(buttonBackgroundColor);
 			button.setTextColor(textColor);
 			button.setText("Salir");
-			button.setOnClickListener(new View.OnClickListener(){
+			button.setOnClickListener(new View.OnClickListener() {
 
-					@Override
-					public void onClick(View p1)
-					{
-						finish();
-					}
-				});
+				@Override
+				public void onClick(View p1) {
+					finish();
+				}
+			});
 
 			linear_main.addView(button);
 			setContentView(linear_main);
 
-
 		}
 	}
-	//Application class
+	// Application class
 
 	public static class app extends Application {
-
 
 		private Thread.UncaughtExceptionHandler uncaughtExceptionHandler;
 
@@ -520,39 +528,36 @@ public class MainActivity extends Activity
 			this.uncaughtExceptionHandler = Thread.getDefaultUncaughtExceptionHandler();
 
 			Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
-					@Override
-					public void uncaughtException(Thread thread, Throwable ex) {
-						Intent intent = new Intent(getApplicationContext(), bug.class);
-						intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+				@Override
+				public void uncaughtException(Thread thread, Throwable ex) {
+					Intent intent = new Intent(getApplicationContext(), bug.class);
+					intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
 
-						intent.putExtra("error", getStackTrace(ex));
+					intent.putExtra("error", getStackTrace(ex));
 
-						PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), 11111, intent, PendingIntent.FLAG_ONE_SHOT);
+					PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), 11111, intent,
+							PendingIntent.FLAG_ONE_SHOT);
 
+					AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+					am.set(AlarmManager.ELAPSED_REALTIME_WAKEUP, 1000, pendingIntent);
 
-						AlarmManager am = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
-						am.set(AlarmManager.ELAPSED_REALTIME_WAKEUP, 1000, pendingIntent);
+					android.os.Process.killProcess(android.os.Process.myPid());
+					System.exit(2);
 
-						android.os.Process.killProcess(android.os.Process.myPid());
-						System.exit(2);
-
-						uncaughtExceptionHandler.uncaughtException(thread, ex);
-					}
-				});
+					uncaughtExceptionHandler.uncaughtException(thread, ex);
+				}
+			});
 			super.onCreate();
 
 		}
 
-
-		private String getStackTrace(Throwable th){
+		private String getStackTrace(Throwable th) {
 			final Writer result = new StringWriter();
 
 			final PrintWriter printWriter = new PrintWriter(result);
 			Throwable cause = th;
 
-
-
-			while(cause != null){
+			while (cause != null) {
 				cause.printStackTrace(printWriter);
 				cause = cause.getCause();
 			}
@@ -562,27 +567,4 @@ public class MainActivity extends Activity
 			return stacktraceAsString;
 		}
 	}
-	
-	/*
-	public static class Power implements Parcelable
-	{
-		float x;
-		float y;
-
-		@Override
-		public int describeContents()
-		{
-			// TODO: Implement this method
-			return 0;
-		}
-
-		@Override
-		public void writeToParcel(Parcel parcel, int p2)
-		{
-			parcel.writeFloat(x);
-			parcel.writeFloat(x);
-		}
-	}
-	*/
-	
 }
