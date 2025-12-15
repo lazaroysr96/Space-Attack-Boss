@@ -96,7 +96,7 @@ ehthumbs.db
 Thumbs.db
 
 # Gradle wrapper
-gradle/wrapper/
+!gradle/wrapper/
 
 # Gradle local distribution
 gradle-*/
