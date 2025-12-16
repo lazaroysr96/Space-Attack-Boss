@@ -16,7 +16,7 @@ import android.view.animation.*;
 public class MainActivity extends Activity {
 	FrameLayout framelayout;
 	ImageView play;
-	MediaPlayer bgsound;
+	public static MusicEngine musicengine;
 	GameView gameview;
 	TextView history;
 	ImageView img1, img2;
@@ -48,26 +48,6 @@ public class MainActivity extends Activity {
 
 	};
 
-	int history_narration[] = {
-			R.raw.narracion_001,
-			R.raw.narracion_002,
-			R.raw.narracion_003,
-			R.raw.narracion_004,
-			R.raw.narracion_005,
-			R.raw.narracion_006,
-			R.raw.narracion_007,
-			R.raw.narracion_008,
-			R.raw.narracion_009,
-			R.raw.narracion_010,
-			R.raw.narracion_011,
-			R.raw.narracion_012,
-			R.raw.narracion_013,
-			R.raw.narracion_014,
-			R.raw.narracion_015,
-			R.raw.narracion_016,
-			R.raw.narracion_017
-	};
-
 	String missions[] = {
             "Elimina a 50 enemigos",
             "Elimina a 100 enemigos",
@@ -89,6 +69,7 @@ public class MainActivity extends Activity {
 		history = findViewById(R.id.mainTextView1);
 		img1 = findViewById(R.id.mainImageView1);
 		img2 = findViewById(R.id.mainImageView2);
+		musicengine = new MusicEngine(this);
 
 		if (getActionBar() != null) {
 			getActionBar().hide();
@@ -112,8 +93,9 @@ public class MainActivity extends Activity {
 		}
 
 		getWindow().setFlags(1024, 1024);
-		bgsound = MediaPlayer.create(MainActivity.this, R.raw.bg_history);
-		bgsound.start();
+		//bgsound = MediaPlayer.create(MainActivity.this, R.raw.bg_history);
+		//bgsound.start();
+		musicengine.startBGMusic(R.raw.bg_history);
 	}
 
 	private void startGame() {
@@ -139,10 +121,7 @@ public class MainActivity extends Activity {
 
 			@Override
 			public void onGameOver() {
-				bgsound.stop();
-				bgsound = MediaPlayer.create(MainActivity.this, R.raw.gameover);
-				bgsound.setLooping(true);
-				bgsound.start();
+				musicengine.startBGMusic(R.raw.gameover);
 			}
 		});
 		gameview.setOnGameVictoryListener(new GameView.OnGameVictoryListener() {
@@ -150,24 +129,7 @@ public class MainActivity extends Activity {
 			@Override
 			public void onGameVictory() {
 				gameData.edit().putInt("mission", gameData.getInt("mission", 1) + 1).commit();
-				// Transición suave de música con fade out
-				if (bgsound != null && bgsound.isPlaying()) {
-					// Reducir volumen gradualmente (fade out)
-					fadeOutMusic(new Runnable() {
-						@Override
-						public void run() {
-							// Una vez completado el fade out, cambiar música
-							bgsound.stop();
-							bgsound = MediaPlayer.create(MainActivity.this, R.raw.bg_victory);
-							bgsound.setLooping(false);
-
-							// Iniciar con fade in
-							bgsound.setVolume(0f, 0f);
-							bgsound.start();
-							fadeInMusic();
-						}
-					});
-				}
+				musicengine.startBGMusic(R.raw.bg_victory);
 			}
 		});
 		framelayout.addView(gameview);
@@ -180,98 +142,10 @@ public class MainActivity extends Activity {
 		anim.setInterpolator(new DecelerateInterpolator());
 		anim.start();
 
-		fadeOutMusic(new Runnable() {
-			@Override
-			public void run() {
-				// Una vez completado el fade out, cambiar música
-				bgsound.stop();
-				bgsound = MediaPlayer.create(MainActivity.this, R.raw.bg_game);
-				bgsound.setLooping(true);
-
-				// Iniciar con fade in
-				bgsound.setVolume(0.1f, 0.1f);
-				bgsound.start();
-				fadeInMusic();
-			}
-		});
+		musicengine.startBGMusic(R.raw.bg_game);
 	}
 
-	private Handler fadeHandler = new Handler();
-	private boolean isFading = false;
-
-	private void fadeOutMusic(final Runnable onComplete) {
-		if (isFading || bgsound == null)
-			return;
-		isFading = true;
-
-		final int fadeDuration = 2000; // 2 segundos para fade out
-		final int fadeSteps = 20;
-		final float stepVolume = 0.5f / fadeSteps; // Volume actual (0.5) dividido en pasos
-		final int stepDelay = fadeDuration / fadeSteps;
-
-		Runnable fadeRunnable = new Runnable() {
-			private int currentStep = 0;
-
-			@Override
-			public void run() {
-				if (currentStep < fadeSteps && bgsound != null && bgsound.isPlaying()) {
-					float newVolume = 0.5f - (stepVolume * currentStep);
-					if (newVolume < 0)
-						newVolume = 0;
-					bgsound.setVolume(newVolume, newVolume);
-
-					currentStep++;
-					fadeHandler.postDelayed(this, stepDelay);
-				} else {
-					// Fade out completado
-					if (bgsound != null) {
-						bgsound.setVolume(0f, 0f);
-					}
-					isFading = false;
-					if (onComplete != null) {
-						onComplete.run();
-					}
-				}
-			}
-		};
-
-		fadeHandler.post(fadeRunnable);
-	}
-
-	private void fadeInMusic() {
-		if (bgsound == null)
-			return;
-
-		final int fadeDuration = 1500; // 1.5 segundos para fade in
-		final int fadeSteps = 15;
-		final float stepVolume = 1.0f / fadeSteps;
-		final int stepDelay = fadeDuration / fadeSteps;
-
-		Runnable fadeRunnable = new Runnable() {
-			private int currentStep = 0;
-
-			@Override
-			public void run() {
-				if (currentStep < fadeSteps && bgsound != null && bgsound.isPlaying()) {
-					float newVolume = stepVolume * currentStep;
-					if (newVolume > 1.0f)
-						newVolume = 1.0f;
-					bgsound.setVolume(newVolume, newVolume);
-
-					currentStep++;
-					fadeHandler.postDelayed(this, stepDelay);
-				} else {
-					// Fade in completado
-					if (bgsound != null) {
-						bgsound.setVolume(1.0f, 1.0f);
-					}
-				}
-			}
-		};
-
-		fadeHandler.post(fadeRunnable);
-	}
-
+	
 	int index = 0;
 
 	public void mostrarHistoria() {
@@ -286,18 +160,20 @@ public class MainActivity extends Activity {
 
 	@Override
 	protected void onResume() {
-		if (bgsound != null) {
+		/*if (bgsound != null) {
 			bgsound.start();
-		}
+		}*/
+		musicengine.restart();
 
 		super.onResume();
 	}
 
 	@Override
 	protected void onPause() {
-		if (bgsound != null) {
+		/*if (bgsound != null) {
 			bgsound.pause();
-		}
+		}*/
+		musicengine.pause();
 
 		super.onPause();
 	}
@@ -334,10 +210,6 @@ public class MainActivity extends Activity {
 			}
 		});
 		anim.start();
-
-		if (index < history_narration.length) {
-			// MediaPlayer.create(this,history_narration[index]).start();
-		}
 	}
 
 	private void nextAction() {

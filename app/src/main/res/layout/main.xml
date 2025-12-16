@@ -24,24 +24,22 @@
 		android:layout_width="match_parent"
 		android:layout_height="match_parent"
 		android:id="@+id/mainFrameLayout">
-
-		<TextView
-			android:layout_width="match_parent"
-			android:layout_height="match_parent"
-			android:text="Text"
-			android:id="@+id/mainTextView1"
-			android:layout_gravity="center"
-			android:textColor="#18FF00"
-			android:textSize="28sp"
-			android:gravity="left"
-			android:padding="40dp"
-			android:shadowColor="#FAE800"
-			android:shadowDx="1.0"
-			android:shadowDy="1.0"
-			android:shadowRadius="1.0"/>
-
 	</FrameLayout>
-
+	<TextView
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		android:text="Text"
+		android:id="@+id/mainTextView1"
+		android:layout_gravity="center"
+		android:textColor="#18FF00"
+		android:textSize="24sp"
+		android:gravity="left"
+		android:padding="40dp"
+		android:shadowColor="#000000"
+		android:shadowDx="2.0"
+		android:shadowDy="2.0"
+		android:shadowRadius="2.0"
+		android:textStyle="bold"/>
 	<ImageView
 		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"

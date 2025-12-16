@@ -126,6 +126,30 @@ public class GameView extends View {
 		record = gameData.getInt("record", 0);
 		mision = gameData.getInt("mission", 1);
 		createSoundPool();
+		switch(mision){
+			case 1:
+				MainActivity.musicengine.runSound(R.raw.mission_1);
+				break;
+			case 2:
+				MainActivity.musicengine.runSound(R.raw.mission_2);
+				break;
+			case 3:
+				MainActivity.musicengine.runSound(R.raw.mission_3);
+				break;
+			case 4:
+				MainActivity.musicengine.runSound(R.raw.mission_4);
+				break;
+			case 5:
+				MainActivity.musicengine.runSound(R.raw.mission_5);
+				break;
+			case 6:
+				MainActivity.musicengine.runSound(R.raw.mission_6);
+				break;
+			case 7:
+				MainActivity.musicengine.runSound(R.raw.mission_7);
+				break;
+		}
+		
 	}
 
 	@Override
@@ -165,11 +189,13 @@ public class GameView extends View {
 					: mision == 2 ? isCompleteMission2()
 							: mision == 3 ? isCompleteMission3()
 									: mision == 4 ? isCompleteMission4()
-											: mision == 5 ? isCompleteMission5() : (puntos >= 500) ? true : false;
+											: mision == 5 ? isCompleteMission5() 
+													: mision == 6 ? isCompleteMission6()
+															: mision == 7 ? isCompleteMission7(): (puntos >= 10000) ? true : false;
 
 			if (isGameDone) {
 				if (!isDeclareMissionDone) {
-					startSoundPool(8);
+					MainActivity.musicengine.runSound(R.raw.mission_complete);
 					isDeclareMissionDone = true;
 				}
 				if (blocks.size() <= 0 && list_boss.size() <= 0) {
@@ -621,7 +647,7 @@ public class GameView extends View {
 		}
 
 		for (Fire fire : fires) {
-			fire.draw(canvas);
+			fire.draw(canvas,6);
 		}
 
 		for (Block block : blocks) {
@@ -950,7 +976,7 @@ public class GameView extends View {
 			}
 
 			for (Fire fire : fires) {
-				if ((!fire.isEliminada()) && isCollisionFireNuclear(fire, nuclear)) {
+				if ((!nuclear.isEliminada())&&(!fire.isEliminada()) && isCollisionFireNuclear(fire, nuclear)) {
 					nuclear.eliminar();
 					fire.eliminar();
 					// startSound(R.raw.sound4);
@@ -1137,6 +1163,9 @@ public class GameView extends View {
 					break;
 				case 5:
 					drawType5(canvas, mx, my);
+					break;
+				case 6:
+					drawType6(canvas, mx, my);
 					break;
 				default:
 					drawType1(canvas, mx, my);
@@ -1327,6 +1356,48 @@ public class GameView extends View {
 
 				canvas.drawCircle(sparkX, sparkY, sparkSize, sparkPaint);
 			}
+		}
+		
+		
+		void drawType6(Canvas canvas, float mx, float my) {
+			// Dibujar estela energética
+			for (int i = 0; i < 5; i++) {
+				float trailProgress = i / 5f;
+				float trailX = x - mx * trailProgress * 3;
+				float trailY = y - my * trailProgress * 3;
+				float trailSize = (basesize * 3) * (1 - trailProgress);
+				int alpha = 100 - (int) (trailProgress * 80);
+
+				paint3.setAlpha(alpha);
+				canvas.drawCircle(trailX, trailY, trailSize, paint3);
+			}
+			paint3.setAlpha(255);
+
+			// Dibujar anillos expansivos
+			/*for (int i = 0; i < 2; i++) {
+				float ringProgress = (animationTime + i * 0.3f) % 1f;
+				float ringSize = (basesize * 2) + ringProgress * n.n10;
+				int ringAlpha = (int) ((1 - ringProgress) * 150);
+
+				paint2.setAlpha(ringAlpha);
+				canvas.drawCircle(x, y, ringSize, paint2);
+			}*/
+			paint2.setAlpha(180);
+
+			// Dibujar núcleo principal con pulsación
+			float corePulse = (basesize * 4) + (float) Math.sin(animationTime * 4) * basesize;
+			canvas.drawCircle(x, y, corePulse, paint);
+
+			// Dibujar centro brillante
+			canvas.drawCircle(x, y, basesize * 2, paint2);
+
+			// Dibujar partículas de energía
+			/*for (int i = 0; i < 4; i++) {
+				float angle = animationTime * 3 + (i * (float) Math.PI / 2);
+				float particleX = x + (float) Math.cos(angle) * basesize * 2;
+				float particleY = y + (float) Math.sin(angle) * basesize * 2;
+				canvas.drawCircle(particleX, particleY, basesize, paint);
+			}*/
 		}
 
 		void setColor(int color) {
@@ -3165,6 +3236,14 @@ public class GameView extends View {
 
 	private boolean isCompleteMission5() {
 		return count_muro_lifes >= 10;
+	}
+	
+	private boolean isCompleteMission6() {
+		return puntos >= 500;
+	}
+	
+	private boolean isCompleteMission7() {
+		return puntos >= 3000;
 	}
 
 }
